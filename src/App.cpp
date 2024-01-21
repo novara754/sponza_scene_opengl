@@ -23,7 +23,7 @@ App::App(GLFWwindow *window) : m_window(window)
 {
     const auto *scene = m_assimp_importer.ReadFile(
         "./assets/sponza.gltf",
-        aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_FlipUVs
+        aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace
     );
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
@@ -33,13 +33,13 @@ App::App(GLFWwindow *window) : m_window(window)
     for (auto i = 0; i < scene->mNumMaterials; ++i)
     {
         const auto *material = scene->mMaterials[i];
-        aiString diffuse_name;
+        aiString diffuse_name, normal_name;
 
         if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0)
         {
             if (material->GetTexture(aiTextureType_DIFFUSE, 0, &diffuse_name) != aiReturn_SUCCESS)
             {
-                throw std::runtime_error(fmt::format("failed to get texture for material #{}", i));
+                throw std::runtime_error(fmt::format("failed to get diffuse texture for material #{}", i));
             }
         }
         else
@@ -48,10 +48,24 @@ App::App(GLFWwindow *window) : m_window(window)
         }
 
         const auto diffuse_path = std::string("./assets/") + diffuse_name.C_Str();
-
         const auto diffuse = Texture::from_file_2d(diffuse_path);
 
-        m_materials.push_back(std::make_shared<Material>(diffuse));
+        if (material->GetTextureCount(aiTextureType_NORMALS) > 0)
+        {
+            if (material->GetTexture(aiTextureType_NORMALS, 0, &normal_name) != aiReturn_SUCCESS)
+            {
+                throw std::runtime_error(fmt::format("failed to get normal texture for material #{}", i));
+            }
+        }
+        else
+        {
+            normal_name = "flat_normal.png";
+        }
+
+        const auto normal_path = std::string("./assets/") + normal_name.C_Str();
+        const auto normal = Texture::from_file_2d(normal_path, false);
+
+        m_materials.push_back(std::make_shared<Material>(diffuse, normal));
     }
 
     std::vector<Mesh> meshes;
@@ -69,6 +83,7 @@ App::App(GLFWwindow *window) : m_window(window)
                 .position = assimp_to_glm(mesh->mVertices[j]),
                 .normal = assimp_to_glm(mesh->mNormals[j]),
                 .tex_coords = {0.0f, 0.0f},
+                .tangent = assimp_to_glm(mesh->mTangents[j]),
             };
             if (const auto tex_coords = mesh->mTextureCoords[0])
             {
@@ -238,6 +253,7 @@ void App::render(const double delta_time)
         m_phong_program.set_uniform("light.quadratic", m_light.m_quadratic_attenuation);
 
         m_phong_program.set_uniform("material.diffuse_map", 0);
+        m_phong_program.set_uniform("material.normal_map", 1);
         m_phong_program.set_uniform("material.shininess", 64.0f);
 
         m_phong_program.set_uniform("sun.direction", m_sun.m_direction);

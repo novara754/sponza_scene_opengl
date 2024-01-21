@@ -126,6 +126,16 @@ Mesh::Mesh(
         GL_FALSE,
         sizeof(Vertex),
         reinterpret_cast<void *>(offsetof(Vertex, tex_coords))
+        );
+
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(
+        3,
+        3,
+        GL_FLOAT,
+        GL_FALSE,
+        sizeof(Vertex),
+        reinterpret_cast<void *>(offsetof(Vertex, tangent))
     );
 
     glBindVertexArray(0);
@@ -136,6 +146,7 @@ void Mesh::draw() const
     if (m_material)
     {
         m_material->m_diffuse->bind(GL_TEXTURE0);
+        m_material->m_normal->bind(GL_TEXTURE1);
     }
 
     glBindVertexArray(m_vao);

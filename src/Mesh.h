@@ -14,8 +14,10 @@
 struct Material
 {
     std::shared_ptr<Texture> m_diffuse;
+    std::shared_ptr<Texture> m_normal;
 
-    explicit Material(std::shared_ptr<Texture> diffuse) : m_diffuse(std::move(diffuse))
+    explicit Material(std::shared_ptr<Texture> diffuse, std::shared_ptr<Texture> normal)
+        : m_diffuse(std::move(diffuse)), m_normal(std::move(normal))
     {
     }
 };
@@ -28,6 +30,7 @@ class Mesh
         glm::vec3 position;
         glm::vec3 normal;
         glm::vec2 tex_coords;
+        glm::vec3 tangent;
     };
 
   private:

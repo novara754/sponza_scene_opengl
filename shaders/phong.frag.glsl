@@ -24,13 +24,14 @@ struct DirectionalLight {
 
 struct Material {
     sampler2D diffuse_map;
+    sampler2D normal_map;
     float shininess;
 };
 
 in vec3 o_frag_position;
 in vec4 o_light_space_frag_position;
-in vec3 o_normal;
 in vec2 o_tex_coords;
+in mat3 o_tbn;
 
 uniform vec3 camera_position;
 
@@ -40,6 +41,12 @@ uniform Material material;
 
 layout (location = 0) out vec4 frag_color;
 layout (location = 1) out vec4 bright_color;
+
+vec3 get_normal() {
+    vec3 normal = texture(material.normal_map, o_tex_coords).rgb;
+    normal = normal * 2.0 - 1.0;
+    return normalize(o_tbn * normal);
+}
 
 float shadow(DirectionalLight light, vec3 normal) {
     vec3 proj_coords = o_light_space_frag_position.xyz / o_light_space_frag_position.w;
@@ -68,7 +75,7 @@ float shadow(DirectionalLight light, vec3 normal) {
 vec3 calc_directional_light(DirectionalLight light) {
     vec3 diffuse_reflection = texture(material.diffuse_map, o_tex_coords).rgb;
     vec3 specular_reflection = vec3(0.0);
-    vec3 normal = normalize(o_normal);
+    vec3 normal = get_normal();
 
     vec3 ambient = diffuse_reflection * light.ambient;
 
@@ -86,7 +93,7 @@ vec3 calc_directional_light(DirectionalLight light) {
 vec3 calc_point_light(PointLight light) {
     vec3 diffuse_reflection = texture(material.diffuse_map, o_tex_coords).rgb;
     vec3 specular_reflection = vec3(0.0);
-    vec3 normal = normalize(o_normal);
+    vec3 normal = get_normal();
 
     vec3 ambient = diffuse_reflection * light.ambient;
 

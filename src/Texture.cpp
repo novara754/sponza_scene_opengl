@@ -10,29 +10,29 @@
 #include <glm/vec4.hpp>
 #include <spdlog/spdlog.h>
 
-std::shared_ptr<Texture> Texture::from_file_2d(const std::string &filename)
+std::shared_ptr<Texture> Texture::from_file_2d(const std::string &filename, const bool is_srgb)
 {
     // TODO - Look into glTextureStorage (GL_ARB_texture_storage)
     // https://gamedev.stackexchange.com/questions/134177/whats-the-dsa-version-of-glteximage2d
 
-    FILE *file = fopen(filename.c_str(), "rb");
-    if (!file)
-    {
-        throw std::runtime_error(fmt::format("could not find file '{}'", filename));
-    }
     int width, height, channels;
-    auto *image_data = stbi_load_from_file(file, &width, &height, &channels, 0);
+    auto *image_data = stbi_load(filename.c_str(), &width, &height, &channels, 0);
+
+    if (!image_data)
+    {
+        throw std::runtime_error(fmt::format("failed to load image '{}'", filename));
+    }
 
     GLint internal_format;
     GLenum format;
     if (channels == 4)
     {
-        internal_format = GL_SRGB_ALPHA;
+        internal_format = is_srgb ? GL_SRGB_ALPHA : GL_RGBA;
         format = GL_RGBA;
     }
     else if (channels == 3)
     {
-        internal_format = GL_SRGB;
+        internal_format = is_srgb ? GL_SRGB : GL_RGB;
         format = GL_RGB;
     }
     else
@@ -66,7 +66,6 @@ std::shared_ptr<Texture> Texture::from_file_2d(const std::string &filename)
     glGenerateMipmap(GL_TEXTURE_2D);
 
     stbi_image_free(image_data);
-    fclose(file);
 
     return std::make_shared<Texture>(texture, GL_TEXTURE_2D);
 }
