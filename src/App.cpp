@@ -1,0 +1,303 @@
+#include "App.h"
+
+#include <stdexcept>
+
+#include <GLFW/glfw3.h>
+#include <glad/glad.h>
+#include <glm/gtc/type_ptr.inl>
+#include <spdlog/spdlog.h>
+
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+
+App::App(GLFWwindow *window) : m_window(window)
+{
+    m_depth_program.attach_shader(GL_VERTEX_SHADER, "./shaders/depth.vert.glsl");
+    m_depth_program.attach_shader(GL_FRAGMENT_SHADER, "./shaders/depth.frag.glsl");
+    m_depth_program.link();
+
+    m_shadow_map_framebuffer.set_depth_attachment(m_shadow_map_depth_attachment);
+    m_shadow_map_framebuffer.set_draw_buffer(GL_NONE);
+    m_shadow_map_framebuffer.set_read_buffer(GL_NONE);
+
+    m_post_processing_framebuffer.set_color_attachment(m_post_processing_color_attachment);
+    m_post_processing_framebuffer.set_depth_attachment(m_post_processing_depth_attachment);
+
+    m_cube_program.attach_shader(GL_VERTEX_SHADER, "./shaders/phong.vert.glsl");
+    m_cube_program.attach_shader(GL_FRAGMENT_SHADER, "./shaders/phong.frag.glsl");
+    m_cube_program.link();
+
+    m_post_processing_program.attach_shader(GL_VERTEX_SHADER, "./shaders/postprocessing.vert.glsl");
+    m_post_processing_program.attach_shader(
+        GL_FRAGMENT_SHADER,
+        "./shaders/postprocessing.frag.glsl"
+    );
+    m_post_processing_program.link();
+}
+
+int App::run()
+{
+    int width, height;
+    glfwGetWindowSize(m_window, &width, &height);
+    glViewport(0, 0, width, height);
+
+    glfwSetWindowUserPointer(m_window, this);
+    glfwSetFramebufferSizeCallback(m_window, framebuffer_size_callback);
+
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageControl(
+        GL_DONT_CARE,
+        GL_DONT_CARE,
+        GL_DEBUG_SEVERITY_NOTIFICATION,
+        0,
+        nullptr,
+        GL_FALSE
+    );
+    glDebugMessageCallback(debug_message_callback, nullptr);
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    auto &io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+    ImGui_ImplGlfw_InitForOpenGL(m_window, true);
+    ImGui_ImplOpenGL3_Init();
+
+    auto last_frame_time = glfwGetTime();
+    while (!glfwWindowShouldClose(m_window))
+    {
+        glfwPollEvents();
+        glfwSwapBuffers(m_window);
+
+        const auto now = glfwGetTime();
+        const auto delta_time = now - last_frame_time;
+        m_camera_controller.update(m_window, delta_time, m_camera);
+
+        render(delta_time);
+
+        last_frame_time = now;
+    }
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
+    glfwTerminate();
+    return EXIT_SUCCESS;
+}
+
+void App::render(const double delta_time)
+{
+    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Shadow Map Render Pass");
+    glViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
+    m_shadow_map_framebuffer.bind();
+    {
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        m_depth_program.use();
+        m_depth_program.set_uniform("light_space", m_sun.get_light_space_matrix());
+
+        m_cube.draw(m_depth_program);
+        m_ground.draw(m_depth_program);
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glPopDebugGroup();
+
+    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Scene Render Pass");
+    glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+    m_post_processing_framebuffer.bind();
+    {
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+
+        glClearColor(0.1, 0.1, 0.1, 1.0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        m_cube_program.use();
+        m_cube_program.set_uniform("view", m_camera.get_view_matrix());
+        m_cube_program.set_uniform("projection", m_camera.get_projection_matrix());
+        m_cube_program.set_uniform("camera_position", m_camera.m_eye);
+
+        m_cube_program.set_uniform("light.position", m_light.m_position);
+        m_cube_program.set_uniform("light.ambient", m_light.m_ambient);
+        m_cube_program.set_uniform("light.diffuse", m_light.m_diffuse);
+        m_cube_program.set_uniform("light.specular", m_light.m_specular);
+        m_cube_program.set_uniform("light.constant", m_light.m_constant_attenuation);
+        m_cube_program.set_uniform("light.linear", m_light.m_linear_attenuation);
+        m_cube_program.set_uniform("light.quadratic", m_light.m_quadratic_attenuation);
+
+        m_cube_program.set_uniform("material.diffuse_map", 0);
+        m_cube_program.set_uniform("material.specular_map", 1);
+        m_cube_program.set_uniform("material.shininess", m_shininess);
+
+        m_cube_program.set_uniform("sun.direction", m_sun.m_direction);
+        m_cube_program.set_uniform("sun.ambient", m_sun.m_ambient);
+        m_cube_program.set_uniform("sun.diffuse", m_sun.m_diffuse);
+        m_cube_program.set_uniform("sun.specular", m_sun.m_specular);
+        m_cube_program.set_uniform("sun.shadow_map", 2);
+        m_cube_program.set_uniform("light_space", m_sun.get_light_space_matrix());
+
+        m_container_diffuse.bind(GL_TEXTURE0);
+        m_container_specular.bind(GL_TEXTURE1);
+        m_shadow_map_depth_attachment.bind(GL_TEXTURE2);
+
+        m_cube.draw(m_cube_program);
+        m_ground.draw(m_cube_program);
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glPopDebugGroup();
+
+    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Post-Processing Render Pass");
+    {
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
+        m_post_processing_program.use();
+        m_post_processing_color_attachment.bind(GL_TEXTURE0);
+        m_post_processing_plane.draw();
+    }
+    glPopDebugGroup();
+
+    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "ImGui Render Pass");
+    {
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        draw_ui(delta_time);
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
+    glPopDebugGroup();
+}
+
+void App::draw_ui(const double delta_time)
+{
+    ImGui::Begin("Stats", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+    {
+        ImGui::Text("FPS: %.1f", 1.0 / delta_time);
+    }
+    ImGui::End();
+
+    ImGui::Begin("Light", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+    {
+        ImGui::SeparatorText("Transform");
+        ImGui::SliderFloat3("Position", glm::value_ptr(m_light.m_position), -10.0f, 10.0f);
+
+        ImGui::SeparatorText("Color w/ Intensity");
+        ImGui::ColorEdit3("Ambient", glm::value_ptr(m_light.m_ambient));
+        ImGui::ColorEdit3("Diffuse", glm::value_ptr(m_light.m_diffuse));
+        ImGui::ColorEdit3("Specular", glm::value_ptr(m_light.m_specular));
+
+        ImGui::SeparatorText("Attenuation");
+        ImGui::SliderFloat("Constant", &m_light.m_constant_attenuation, 0.0f, 2.0f);
+        ImGui::SliderFloat("Linear", &m_light.m_linear_attenuation, 0.0f, 2.0f);
+        ImGui::SliderFloat("Quadratic", &m_light.m_quadratic_attenuation, 0.0f, 2.0f);
+    }
+    ImGui::End();
+
+    ImGui::Begin("Sun", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+    {
+        ImGui::SeparatorText("Transform");
+        ImGui::SliderFloat3("Position", glm::value_ptr(m_sun.m_position), -10.0f, 10.0f);
+        ImGui::SliderFloat3("Direction", glm::value_ptr(m_sun.m_direction), -10.0f, 10.0f);
+
+        ImGui::SeparatorText("Color w/ Intensity");
+        ImGui::ColorEdit3("Ambient", glm::value_ptr(m_sun.m_ambient));
+        ImGui::ColorEdit3("Diffuse", glm::value_ptr(m_sun.m_diffuse));
+        ImGui::ColorEdit3("Specular", glm::value_ptr(m_sun.m_specular));
+
+        ImGui::SeparatorText("Shadow Map");
+        ImGui::Image(
+            reinterpret_cast<void *>(m_shadow_map_depth_attachment.get_handle()),
+            ImVec2(256, 256)
+        );
+    }
+    ImGui::End();
+
+    ImGui::Begin("Cube", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+    {
+        ImGui::SeparatorText("Transform");
+        ImGui::SliderFloat3(
+            "Position",
+            glm::value_ptr(m_cube.m_transform.m_position),
+            -10.0f,
+            10.0f
+        );
+        ImGui::SliderFloat3(
+            "Rotation",
+            glm::value_ptr(m_cube.m_transform.m_rotation),
+            0.0f,
+            359.99f
+        );
+        ImGui::SliderFloat3("Scale", glm::value_ptr(m_cube.m_transform.m_scale), 0.0f, 100.0f);
+
+        ImGui::SeparatorText("Shading");
+        ImGui::SliderFloat("Shininess", &m_shininess, 0.0f, 512.0f);
+    }
+    ImGui::End();
+}
+
+void App::framebuffer_size_callback(GLFWwindow *window, const int width, const int height)
+{
+    glViewport(0, 0, width, height);
+}
+
+void GLAPIENTRY App::debug_message_callback(
+    const GLenum source, const GLenum in_msg_type, const GLuint id, const GLenum in_severity,
+    const GLsizei length, const GLchar *message, const void *user_param
+)
+{
+    const auto msg_type = [in_msg_type]() {
+        switch (in_msg_type)
+        {
+            case GL_DEBUG_TYPE_ERROR:
+                return "ERROR";
+            case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+                return "DEPREC";
+            case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+                return "UNDEF";
+            case GL_DEBUG_TYPE_PORTABILITY:
+                return "PORTAB";
+            case GL_DEBUG_TYPE_PERFORMANCE:
+                return "PERFOR";
+            case GL_DEBUG_TYPE_MARKER:
+                return "MARKER";
+            case GL_DEBUG_TYPE_PUSH_GROUP:
+                return "PUSH_G";
+            case GL_DEBUG_TYPE_POP_GROUP:
+                return "POP_G";
+            case GL_DEBUG_TYPE_OTHER:
+                return "OTHER";
+            default:
+                throw std::runtime_error("unreachable");
+        }
+    }();
+
+    const auto severity = [in_severity]() {
+        switch (in_severity)
+        {
+            case GL_DEBUG_SEVERITY_NOTIFICATION:
+                return "NOTI";
+            case GL_DEBUG_SEVERITY_LOW:
+                return "LOW";
+            case GL_DEBUG_SEVERITY_MEDIUM:
+                return "MED";
+            case GL_DEBUG_SEVERITY_HIGH:
+                return "HIGH";
+            default:
+                throw std::runtime_error("unreachable");
+        }
+    }();
+
+    std::string msg(message, length);
+
+    if (msg.ends_with(" is being recompiled based on GL state."))
+    {
+        return;
+    }
+
+    spdlog::info("[{}] [{}] {}", msg_type, severity, msg);
+}
