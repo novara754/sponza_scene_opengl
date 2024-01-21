@@ -76,6 +76,17 @@ class App
     float m_gamma{2.2f};
     float m_exposure{1.0f};
 
+    ShaderProgram m_skybox_program;
+    std::shared_ptr<Texture> m_skybox_texture{Texture::from_file_cubemap(std::array<std::string, 6>{
+        "./assets/skybox/px.png",
+        "./assets/skybox/nx.png",
+        "./assets/skybox/py.png",
+        "./assets/skybox/ny.png",
+        "./assets/skybox/pz.png",
+        "./assets/skybox/nz.png",
+    })};
+    Mesh m_skybox_mesh{Mesh::skybox()};
+
     ShaderProgram m_phong_program;
     std::vector<Model> m_models;
     std::vector<std::shared_ptr<Material>> m_materials;

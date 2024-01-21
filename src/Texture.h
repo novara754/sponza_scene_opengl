@@ -1,8 +1,9 @@
 #ifndef TEXTURE_H
 #define TEXTURE_H
 
-#include <string>
 #include <memory>
+#include <span>
+#include <string>
 
 #include <glad/glad.h>
 
@@ -13,6 +14,7 @@ class Texture
 
   public:
     static std::shared_ptr<Texture> from_file_2d(const std::string &filename);
+    static std::shared_ptr<Texture> from_file_cubemap(std::span<const std::string> faces);
     static Texture color_attachment(int width, int height);
     static Texture depth_attachment(int width, int height);
 

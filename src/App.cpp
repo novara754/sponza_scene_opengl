@@ -122,6 +122,10 @@ App::App(GLFWwindow *window) : m_window(window)
         std::array<GLenum, 2>{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1}
     );
 
+    m_skybox_program.attach_shader(GL_VERTEX_SHADER, "./shaders/skybox.vert.glsl");
+    m_skybox_program.attach_shader(GL_FRAGMENT_SHADER, "./shaders/skybox.frag.glsl");
+    m_skybox_program.link();
+
     m_phong_program.attach_shader(GL_VERTEX_SHADER, "./shaders/phong.vert.glsl");
     m_phong_program.attach_shader(GL_FRAGMENT_SHADER, "./shaders/phong.frag.glsl");
     m_phong_program.link();
@@ -215,8 +219,10 @@ void App::render(const double delta_time)
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
 
-        glClearColor(0.0, 0.0, 0.0, 1.0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        const auto view = m_camera.get_view_matrix();
+        const auto view_no_translation = glm::mat4(glm::mat3(view));
 
         m_phong_program.use();
         m_phong_program.set_uniform("view", m_camera.get_view_matrix());
@@ -248,6 +254,14 @@ void App::render(const double delta_time)
         {
             model.draw(m_phong_program);
         }
+
+        glDepthFunc(GL_LEQUAL);
+        m_skybox_program.use();
+        m_skybox_program.set_uniform("view", view_no_translation);
+        m_skybox_program.set_uniform("projection", m_camera.get_projection_matrix());
+        m_skybox_texture->bind(GL_TEXTURE0);
+        m_skybox_mesh.draw();
+        glDepthFunc(GL_LESS);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glPopDebugGroup();

@@ -69,6 +69,36 @@ std::shared_ptr<Texture> Texture::from_file_2d(const std::string &filename)
     return std::make_shared<Texture>(texture, GL_TEXTURE_2D);
 }
 
+std::shared_ptr<Texture> Texture::from_file_cubemap(
+    std::span<const std::string> faces
+)
+{
+    if (faces.size() != 6)
+    {
+        throw std::runtime_error("not enough faces");
+    }
+
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
+
+    for (auto i = 0; i < 6; ++i)
+    {
+        int width, height, channels;
+        auto *image_data = stbi_load(faces[i].c_str(), &width, &height, &channels, 3);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_SRGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image_data);
+        stbi_image_free(image_data);
+    }
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return std::make_shared<Texture>(texture, GL_TEXTURE_CUBE_MAP);
+}
+
 Texture Texture::color_attachment(const int width, const int height)
 {
     return attachment(width, height, GL_RGBA16F, GL_RGBA);

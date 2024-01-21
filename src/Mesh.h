@@ -40,6 +40,7 @@ class Mesh
 
   public:
     [[nodiscard]] static Mesh plane();
+    [[nodiscard]] static Mesh skybox();
 
     explicit Mesh(
         std::span<const Vertex> vertices, std::span<const std::uint32_t> indices = {},
