@@ -7,7 +7,7 @@
 
 #include <fmt/format.h>
 
-Texture Texture::from_file_2d(const std::string &filename)
+std::shared_ptr<Texture> Texture::from_file_2d(const std::string &filename)
 {
     // TODO - Look into glTextureStorage (GL_ARB_texture_storage)
     // https://gamedev.stackexchange.com/questions/134177/whats-the-dsa-version-of-glteximage2d
@@ -46,7 +46,7 @@ Texture Texture::from_file_2d(const std::string &filename)
     stbi_image_free(image_data);
     fclose(file);
 
-    return Texture(texture, GL_TEXTURE_2D);
+    return std::make_shared<Texture>(texture, GL_TEXTURE_2D);
 }
 
 Texture Texture::color_attachment(const int width, const int height)

@@ -1,6 +1,8 @@
 #ifndef APP_H
 #define APP_H
 
+#include <memory>
+
 #include <GLFW/glfw3.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -64,10 +66,7 @@ class App
 
     ShaderProgram m_phong_program;
     std::vector<Model> m_models;
-    std::vector<Material> m_materials;
-
-    Texture m_container_diffuse{Texture::from_file_2d("./assets/container_diffuse.png")};
-    Texture m_container_specular{Texture::from_file_2d("./assets/container_specular.png")};
+    std::vector<std::shared_ptr<Material>> m_materials;
 
     PointLight m_light{
         .m_position = {1.2f, 0.0f, -2.0f},

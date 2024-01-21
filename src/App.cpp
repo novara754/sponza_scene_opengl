@@ -28,6 +28,29 @@ App::App(GLFWwindow *window) : m_window(window)
         throw std::runtime_error("failed to open scene");
     }
 
+    for (auto i = 0; i < scene->mNumMaterials; ++i)
+    {
+        const auto *material = scene->mMaterials[i];
+        aiString diffuse_name;
+
+        if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+        {
+            if (material->GetTexture(aiTextureType_DIFFUSE, 0, &diffuse_name) != aiReturn_SUCCESS)
+            {
+                throw std::runtime_error(fmt::format("failed to get texture for material #{}", i));
+            }
+        } else
+        {
+            diffuse_name = "white.png";
+        }
+
+        const auto diffuse_path = std::string("./assets/") + diffuse_name.C_Str();
+
+        const auto diffuse = Texture::from_file_2d(diffuse_path);
+
+        m_materials.push_back(std::make_shared<Material>(diffuse));
+    }
+
     std::vector<Mesh> meshes;
     meshes.reserve(scene->mRootNode->mNumMeshes);
     for (auto i = 0; i < scene->mRootNode->mNumMeshes; ++i)
@@ -53,16 +76,18 @@ App::App(GLFWwindow *window) : m_window(window)
         }
 
         std::vector<std::uint32_t> indices;
-        for (auto i = 0; i < mesh->mNumFaces; ++i)
+        for (auto j = 0; j < mesh->mNumFaces; ++j)
         {
-            const auto face = mesh->mFaces[i];
-            for (auto j = 0; j < face.mNumIndices; ++j)
+            const auto face = mesh->mFaces[j];
+            for (auto k = 0; k < face.mNumIndices; ++k)
             {
-                indices.emplace_back(face.mIndices[j]);
+                indices.emplace_back(face.mIndices[k]);
             }
         }
 
-        meshes.emplace_back(vertices, indices);
+        const auto material = m_materials[mesh->mMaterialIndex];
+
+        meshes.emplace_back(vertices, indices, material);
     }
     m_models.emplace_back(meshes, Transform({0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}));
 
@@ -187,7 +212,6 @@ void App::render(const double delta_time)
         m_phong_program.set_uniform("light.quadratic", m_light.m_quadratic_attenuation);
 
         m_phong_program.set_uniform("material.diffuse_map", 0);
-        m_phong_program.set_uniform("material.specular_map", 1);
         m_phong_program.set_uniform("material.shininess", 64.0f);
 
         m_phong_program.set_uniform("sun.direction", m_sun.m_direction);
@@ -197,8 +221,6 @@ void App::render(const double delta_time)
         m_phong_program.set_uniform("sun.shadow_map", 2);
         m_phong_program.set_uniform("light_space", m_sun.get_light_space_matrix());
 
-        m_container_diffuse.bind(GL_TEXTURE0);
-        m_container_specular.bind(GL_TEXTURE1);
         m_shadow_map_depth_attachment.bind(GL_TEXTURE2);
 
         for (const auto &model : m_models)
@@ -287,28 +309,6 @@ void App::draw_ui(const double delta_time)
         );
     }
     ImGui::End();
-
-    // ImGui::Begin("Cube", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
-    // {
-    //     ImGui::SeparatorText("Transform");
-    //     ImGui::SliderFloat3(
-    //         "Position",
-    //         glm::value_ptr(m_cube.m_transform.m_position),
-    //         -10.0f,
-    //         10.0f
-    //     );
-    //     ImGui::SliderFloat3(
-    //         "Rotation",
-    //         glm::value_ptr(m_cube.m_transform.m_rotation),
-    //         0.0f,
-    //         359.99f
-    //     );
-    //     ImGui::SliderFloat3("Scale", glm::value_ptr(m_cube.m_transform.m_scale), 0.0f, 100.0f);
-    //
-    //     ImGui::SeparatorText("Shading");
-    //     ImGui::SliderFloat("Shininess", &m_shininess, 0.0f, 512.0f);
-    // }
-    // ImGui::End();
 }
 
 void App::framebuffer_size_callback(GLFWwindow *window, const int width, const int height)

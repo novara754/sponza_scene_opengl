@@ -38,9 +38,4 @@ struct Model
     }
 };
 
-struct Material
-{
-
-};
-
 #endif // MODEL_H

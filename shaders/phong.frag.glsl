@@ -23,7 +23,6 @@ struct DirectionalLight {
 
 struct Material {
     sampler2D diffuse_map;
-    sampler2D specular_map;
     float shininess;
 };
 
@@ -66,7 +65,7 @@ float shadow(DirectionalLight light, vec3 normal) {
 
 vec3 calc_directional_light(DirectionalLight light) {
     vec3 diffuse_reflection = texture(material.diffuse_map, o_tex_coords).rgb;
-    vec3 specular_reflection = texture(material.specular_map, o_tex_coords).rgb;
+    vec3 specular_reflection = vec3(0.0);
     vec3 normal = normalize(o_normal);
 
     vec3 ambient = diffuse_reflection * light.ambient;
@@ -84,7 +83,7 @@ vec3 calc_directional_light(DirectionalLight light) {
 
 vec3 calc_point_light(PointLight light) {
     vec3 diffuse_reflection = texture(material.diffuse_map, o_tex_coords).rgb;
-    vec3 specular_reflection = texture(material.specular_map, o_tex_coords).rgb;
+    vec3 specular_reflection = vec3(0.0);
     vec3 normal = normalize(o_normal);
 
     vec3 ambient = diffuse_reflection * light.ambient;
