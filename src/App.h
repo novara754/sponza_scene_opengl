@@ -64,7 +64,8 @@ class App
 
     ShaderProgram m_post_processing_program;
     Mesh m_post_processing_plane{Mesh::plane()};
-    float m_gamma{2.2};
+    float m_gamma{2.2f};
+    float m_exposure{1.0f};
 
     ShaderProgram m_phong_program;
     std::vector<Model> m_models;

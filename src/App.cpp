@@ -239,6 +239,7 @@ void App::render(const double delta_time)
         glDisable(GL_CULL_FACE);
         m_post_processing_program.use();
         m_post_processing_program.set_uniform("gamma", m_gamma);
+        m_post_processing_program.set_uniform("exposure", m_exposure);
         m_post_processing_color_attachment.bind(GL_TEXTURE0);
         m_post_processing_plane.draw();
     }
@@ -321,6 +322,7 @@ void App::draw_ui(const double delta_time)
     );
     {
         ImGui::SliderFloat("Gamma", &m_gamma, 0.0f, 3.0f);
+        ImGui::SliderFloat("Exposure", &m_exposure, 0.0f, 10.0f);
     }
     ImGui::End();
 }

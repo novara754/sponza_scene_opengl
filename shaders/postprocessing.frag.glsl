@@ -4,6 +4,7 @@ in vec2 o_tex_coords;
 
 uniform sampler2D screen_texture;
 uniform float gamma;
+uniform float exposure;
 
 out vec4 frag_color;
 
@@ -18,7 +19,10 @@ vec3 gamma_correct(vec3 color) {
 
 vec3 tone_mapping(vec3 color) {
     // Reinhard tone mapping.
-    return color / (color + vec3(1.0));
+//    return color / (color + vec3(1.0));
+
+    // Exposure tone mapping
+    return vec3(1.0) - exp(-color * exposure);
 }
 
 void main() {
