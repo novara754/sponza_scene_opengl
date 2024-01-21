@@ -236,6 +236,7 @@ void App::render(const double delta_time)
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
         m_post_processing_program.use();
+        m_post_processing_program.set_uniform("gamma", m_gamma);
         m_post_processing_color_attachment.bind(GL_TEXTURE0);
         m_post_processing_plane.draw();
     }
@@ -307,6 +308,12 @@ void App::draw_ui(const double delta_time)
             reinterpret_cast<void *>(m_shadow_map_depth_attachment.get_handle()),
             ImVec2(256, 256)
         );
+    }
+    ImGui::End();
+
+    ImGui::Begin("Post-Processing", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+    {
+        ImGui::SliderFloat("Gamma", &m_gamma, 0.0f, 3.0f);
     }
     ImGui::End();
 }

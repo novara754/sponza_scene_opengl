@@ -6,6 +6,7 @@
 #include <stdexcept>
 
 #include <fmt/format.h>
+#include <spdlog/spdlog.h>
 
 std::shared_ptr<Texture> Texture::from_file_2d(const std::string &filename)
 {
@@ -18,7 +19,26 @@ std::shared_ptr<Texture> Texture::from_file_2d(const std::string &filename)
         throw std::runtime_error(fmt::format("could not find file '{}'", filename));
     }
     int width, height, channels;
-    auto *image_data = stbi_load_from_file(file, &width, &height, &channels, 4);
+    auto *image_data = stbi_load_from_file(file, &width, &height, &channels, 0);
+
+    GLint internal_format;
+    GLenum format;
+    if (channels == 4)
+    {
+        internal_format = GL_SRGB_ALPHA;
+        format = GL_RGBA;
+    }
+    else if (channels == 3)
+    {
+        internal_format = GL_SRGB;
+        format = GL_RGB;
+    }
+    else
+    {
+        throw std::runtime_error(
+            fmt::format("incorrect number of channels ({}) on image '{}'", channels, filename)
+        );
+    }
 
     GLuint texture;
     glGenTextures(1, &texture);
@@ -32,11 +52,11 @@ std::shared_ptr<Texture> Texture::from_file_2d(const std::string &filename)
     glTexImage2D(
         GL_TEXTURE_2D,
         0,
-        GL_RGBA,
+        internal_format,
         width,
         height,
         0,
-        GL_RGBA,
+        format,
         GL_UNSIGNED_BYTE,
         image_data
     );
