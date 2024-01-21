@@ -19,17 +19,15 @@ class Mesh
 
   private:
     GLsizei m_vertex_count{};
+    GLsizei m_index_count{};
     GLuint m_vao{};
     GLuint m_vbo{};
+    GLuint m_ebo{};
 
   public:
-    [[nodiscard]] static Mesh cube();
     [[nodiscard]] static Mesh plane();
 
-    explicit Mesh(std::span<const Vertex> vertices);
-    Mesh(const Mesh &) = delete;
-    Mesh &operator=(const Mesh &) = delete;
-    ~Mesh();
+    explicit Mesh(std::span<const Vertex> vertices, std::span<const std::uint32_t> indices);
 
     void draw() const;
 };

@@ -2,50 +2,6 @@
 
 #include <array>
 
-constexpr std::array CUBE_VERTICES = {
-    Mesh::Vertex{{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}},
-    Mesh::Vertex{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f}},
-    Mesh::Vertex{{0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 0.0f}},
-    Mesh::Vertex{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f}},
-    Mesh::Vertex{{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}},
-    Mesh::Vertex{{-0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 1.0f}},
-
-    Mesh::Vertex{{-0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    Mesh::Vertex{{0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
-    Mesh::Vertex{{0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-    Mesh::Vertex{{0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-    Mesh::Vertex{{-0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-    Mesh::Vertex{{-0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-
-    Mesh::Vertex{{-0.5f, 0.5f, 0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-    Mesh::Vertex{{-0.5f, 0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
-    Mesh::Vertex{{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
-    Mesh::Vertex{{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
-    Mesh::Vertex{{-0.5f, -0.5f, 0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    Mesh::Vertex{{-0.5f, 0.5f, 0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-
-    Mesh::Vertex{{0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-    Mesh::Vertex{{0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
-    Mesh::Vertex{{0.5f, 0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
-    Mesh::Vertex{{0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
-    Mesh::Vertex{{0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-    Mesh::Vertex{{0.5f, -0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-
-    Mesh::Vertex{{-0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}, {0.0f, 1.0f}},
-    Mesh::Vertex{{0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f}},
-    Mesh::Vertex{{0.5f, -0.5f, 0.5f}, {0.0f, -1.0f, 0.0f}, {1.0f, 0.0f}},
-    Mesh::Vertex{{0.5f, -0.5f, 0.5f}, {0.0f, -1.0f, 0.0f}, {1.0f, 0.0f}},
-    Mesh::Vertex{{-0.5f, -0.5f, 0.5f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f}},
-    Mesh::Vertex{{-0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}, {0.0f, 1.0f}},
-
-    Mesh::Vertex{{-0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
-    Mesh::Vertex{{0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-    Mesh::Vertex{{0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
-    Mesh::Vertex{{0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-    Mesh::Vertex{{-0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
-    Mesh::Vertex{{-0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-};
-
 constexpr std::array PLANE_VERTICES = {
     Mesh::Vertex{{-1.0, -1.0, 0.0}, {0.0, 0.0, 1.0}, {0.0, 0.0}},
     Mesh::Vertex{{1.0, -1.0, 0.0}, {0.0, 0.0, 1.0}, {1.0, 0.0}},
@@ -55,18 +11,14 @@ constexpr std::array PLANE_VERTICES = {
     Mesh::Vertex{{-1.0, -1.0, 0.0}, {0.0, 0.0, 1.0}, {0.0, 0.0}},
 };
 
-Mesh Mesh::cube()
-{
-    return Mesh(CUBE_VERTICES);
-}
-
 Mesh Mesh::plane()
 {
-    return Mesh(PLANE_VERTICES);
+    return Mesh(PLANE_VERTICES, {});
 }
 
-Mesh::Mesh(const std::span<const Vertex> vertices)
-    : m_vertex_count(static_cast<GLsizei>(vertices.size()))
+Mesh::Mesh(const std::span<const Vertex> vertices, const std::span<const std::uint32_t> indices)
+    : m_vertex_count(static_cast<GLsizei>(vertices.size())),
+      m_index_count(static_cast<GLsizei>(indices.size()))
 {
     glGenVertexArrays(1, &m_vao);
     glGenBuffers(1, &m_vbo);
@@ -80,6 +32,17 @@ Mesh::Mesh(const std::span<const Vertex> vertices)
         vertices.data(),
         GL_STATIC_DRAW
     );
+
+    if (m_index_count != 0)
+    {
+        glGenBuffers(1, &m_ebo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+            static_cast<GLsizeiptr>(indices.size() * sizeof(std::uint32_t)),
+            indices.data(),
+            GL_STATIC_DRAW
+        );
+    }
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(
@@ -114,14 +77,15 @@ Mesh::Mesh(const std::span<const Vertex> vertices)
     glBindVertexArray(0);
 }
 
-Mesh::~Mesh()
-{
-    glDeleteBuffers(1, &m_vbo);
-    glDeleteVertexArrays(1, &m_vao);
-}
-
 void Mesh::draw() const
 {
     glBindVertexArray(m_vao);
-    glDrawArrays(GL_TRIANGLES, 0, m_vertex_count);
+    if (m_index_count != 0)
+    {
+        glDrawElements(GL_TRIANGLES, m_index_count, GL_UNSIGNED_INT, nullptr);
+    }
+    else
+    {
+        glDrawArrays(GL_TRIANGLES, 0, m_vertex_count);
+    }
 }

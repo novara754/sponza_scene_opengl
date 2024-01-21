@@ -31,7 +31,7 @@ struct Camera
 
 class CameraController
 {
-    float m_move_speed{10.0f};
+    float m_move_speed{1000.0f};
     float m_turn_speed{2.0f};
 
   public:

@@ -2,6 +2,8 @@
 #define APP_H
 
 #include <GLFW/glfw3.h>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
 
 #include "Camera.h"
 #include "DirectionalLight.h"
@@ -20,6 +22,8 @@ class App
     static constexpr std::uint32_t WINDOW_HEIGHT = 720;
 
   private:
+    Assimp::Importer m_assimp_importer;
+
     GLFWwindow *m_window;
 
     Camera m_camera{
@@ -29,16 +33,20 @@ class App
         .m_aspect = 1280.0f / 720.0f,
         .m_fov_y = 45.0f,
         .m_z_near = 0.1f,
-        .m_z_far = 100.0f,
+        .m_z_far = 10'000.0f,
     };
     CameraController m_camera_controller;
 
     DirectionalLight m_sun{
-        .m_position = {-2.0f, 4.0f, -1.0f},
-        .m_direction = {2.0f, -4.0f, 1.0f},
+        .m_position = {0.0f, 3000.0f, 0.0f},
+        .m_direction = {0.0, -3000.0, 1.0},
         .m_ambient = {0.1f, 0.1f, 0.1f},
         .m_diffuse = {0.8f, 0.8f, 0.8f},
         .m_specular = {0.8f, 0.8f, 0.8f},
+        .m_left_right = 3000.0f,
+        .m_top_bottom = 3000.0f,
+        .m_z_near = 0.1f,
+        .m_z_far = 10000.0f,
     };
 
     ShaderProgram m_depth_program;
@@ -54,12 +62,9 @@ class App
     ShaderProgram m_post_processing_program;
     Mesh m_post_processing_plane{Mesh::plane()};
 
-    ShaderProgram m_cube_program;
-    Model m_cube{Mesh::cube(), Transform()};
-    Model m_ground{
-        Mesh::plane(), Transform({0.0f, 0.0f, -0.5f}, {-90.0f, 0.0f, 0.0f}, {5.0f, 5.0f, 1.0f})
-    };
-    float m_shininess{64.0f};
+    ShaderProgram m_phong_program;
+    std::vector<Model> m_models;
+    std::vector<Material> m_materials;
 
     Texture m_container_diffuse{Texture::from_file_2d("./assets/container_diffuse.png")};
     Texture m_container_specular{Texture::from_file_2d("./assets/container_specular.png")};

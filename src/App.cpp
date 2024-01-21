@@ -3,6 +3,7 @@
 #include <stdexcept>
 
 #include <GLFW/glfw3.h>
+#include <assimp/postprocess.h>
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.inl>
 #include <spdlog/spdlog.h>
@@ -11,8 +12,60 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
+glm::vec3 assimp_to_glm(aiVector3D vec)
+{
+    return {vec.x, vec.y, vec.z};
+}
+
 App::App(GLFWwindow *window) : m_window(window)
 {
+    const auto *scene = m_assimp_importer.ReadFile(
+        "./assets/sponza.gltf",
+        aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_FlipUVs
+    );
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
+    {
+        throw std::runtime_error("failed to open scene");
+    }
+
+    std::vector<Mesh> meshes;
+    meshes.reserve(scene->mRootNode->mNumMeshes);
+    for (auto i = 0; i < scene->mRootNode->mNumMeshes; ++i)
+    {
+        const auto mesh_idx = scene->mRootNode->mMeshes[i];
+        const auto *mesh = scene->mMeshes[mesh_idx];
+
+        std::vector<Mesh::Vertex> vertices;
+        vertices.reserve(mesh->mNumVertices);
+        for (auto j = 0; j < mesh->mNumVertices; ++j)
+        {
+            Mesh::Vertex vertex{
+                .position = assimp_to_glm(mesh->mVertices[j]),
+                .normal = assimp_to_glm(mesh->mNormals[j]),
+                .tex_coords = {0.0f, 0.0f},
+            };
+            if (const auto tex_coords = mesh->mTextureCoords[0])
+            {
+                vertex.tex_coords.x = tex_coords[j].x;
+                vertex.tex_coords.y = tex_coords[j].y;
+            }
+            vertices.emplace_back(vertex);
+        }
+
+        std::vector<std::uint32_t> indices;
+        for (auto i = 0; i < mesh->mNumFaces; ++i)
+        {
+            const auto face = mesh->mFaces[i];
+            for (auto j = 0; j < face.mNumIndices; ++j)
+            {
+                indices.emplace_back(face.mIndices[j]);
+            }
+        }
+
+        meshes.emplace_back(vertices, indices);
+    }
+    m_models.emplace_back(meshes, Transform({0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}));
+
     m_depth_program.attach_shader(GL_VERTEX_SHADER, "./shaders/depth.vert.glsl");
     m_depth_program.attach_shader(GL_FRAGMENT_SHADER, "./shaders/depth.frag.glsl");
     m_depth_program.link();
@@ -24,9 +77,9 @@ App::App(GLFWwindow *window) : m_window(window)
     m_post_processing_framebuffer.set_color_attachment(m_post_processing_color_attachment);
     m_post_processing_framebuffer.set_depth_attachment(m_post_processing_depth_attachment);
 
-    m_cube_program.attach_shader(GL_VERTEX_SHADER, "./shaders/phong.vert.glsl");
-    m_cube_program.attach_shader(GL_FRAGMENT_SHADER, "./shaders/phong.frag.glsl");
-    m_cube_program.link();
+    m_phong_program.attach_shader(GL_VERTEX_SHADER, "./shaders/phong.vert.glsl");
+    m_phong_program.attach_shader(GL_FRAGMENT_SHADER, "./shaders/phong.frag.glsl");
+    m_phong_program.link();
 
     m_post_processing_program.attach_shader(GL_VERTEX_SHADER, "./shaders/postprocessing.vert.glsl");
     m_post_processing_program.attach_shader(
@@ -96,13 +149,16 @@ void App::render(const double delta_time)
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
 
-        glClear(GL_DEPTH_BUFFER_BIT);
+        glClearColor(0.2, 0.0, 0.0, 1.0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         m_depth_program.use();
         m_depth_program.set_uniform("light_space", m_sun.get_light_space_matrix());
 
-        m_cube.draw(m_depth_program);
-        m_ground.draw(m_depth_program);
+        for (const auto &model : m_models)
+        {
+            model.draw(m_depth_program);
+        }
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glPopDebugGroup();
@@ -117,36 +173,38 @@ void App::render(const double delta_time)
         glClearColor(0.1, 0.1, 0.1, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        m_cube_program.use();
-        m_cube_program.set_uniform("view", m_camera.get_view_matrix());
-        m_cube_program.set_uniform("projection", m_camera.get_projection_matrix());
-        m_cube_program.set_uniform("camera_position", m_camera.m_eye);
+        m_phong_program.use();
+        m_phong_program.set_uniform("view", m_camera.get_view_matrix());
+        m_phong_program.set_uniform("projection", m_camera.get_projection_matrix());
+        m_phong_program.set_uniform("camera_position", m_camera.m_eye);
 
-        m_cube_program.set_uniform("light.position", m_light.m_position);
-        m_cube_program.set_uniform("light.ambient", m_light.m_ambient);
-        m_cube_program.set_uniform("light.diffuse", m_light.m_diffuse);
-        m_cube_program.set_uniform("light.specular", m_light.m_specular);
-        m_cube_program.set_uniform("light.constant", m_light.m_constant_attenuation);
-        m_cube_program.set_uniform("light.linear", m_light.m_linear_attenuation);
-        m_cube_program.set_uniform("light.quadratic", m_light.m_quadratic_attenuation);
+        m_phong_program.set_uniform("light.position", m_light.m_position);
+        m_phong_program.set_uniform("light.ambient", m_light.m_ambient);
+        m_phong_program.set_uniform("light.diffuse", m_light.m_diffuse);
+        m_phong_program.set_uniform("light.specular", m_light.m_specular);
+        m_phong_program.set_uniform("light.constant", m_light.m_constant_attenuation);
+        m_phong_program.set_uniform("light.linear", m_light.m_linear_attenuation);
+        m_phong_program.set_uniform("light.quadratic", m_light.m_quadratic_attenuation);
 
-        m_cube_program.set_uniform("material.diffuse_map", 0);
-        m_cube_program.set_uniform("material.specular_map", 1);
-        m_cube_program.set_uniform("material.shininess", m_shininess);
+        m_phong_program.set_uniform("material.diffuse_map", 0);
+        m_phong_program.set_uniform("material.specular_map", 1);
+        m_phong_program.set_uniform("material.shininess", 64.0f);
 
-        m_cube_program.set_uniform("sun.direction", m_sun.m_direction);
-        m_cube_program.set_uniform("sun.ambient", m_sun.m_ambient);
-        m_cube_program.set_uniform("sun.diffuse", m_sun.m_diffuse);
-        m_cube_program.set_uniform("sun.specular", m_sun.m_specular);
-        m_cube_program.set_uniform("sun.shadow_map", 2);
-        m_cube_program.set_uniform("light_space", m_sun.get_light_space_matrix());
+        m_phong_program.set_uniform("sun.direction", m_sun.m_direction);
+        m_phong_program.set_uniform("sun.ambient", m_sun.m_ambient);
+        m_phong_program.set_uniform("sun.diffuse", m_sun.m_diffuse);
+        m_phong_program.set_uniform("sun.specular", m_sun.m_specular);
+        m_phong_program.set_uniform("sun.shadow_map", 2);
+        m_phong_program.set_uniform("light_space", m_sun.get_light_space_matrix());
 
         m_container_diffuse.bind(GL_TEXTURE0);
         m_container_specular.bind(GL_TEXTURE1);
         m_shadow_map_depth_attachment.bind(GL_TEXTURE2);
 
-        m_cube.draw(m_cube_program);
-        m_ground.draw(m_cube_program);
+        for (const auto &model : m_models)
+        {
+            model.draw(m_phong_program);
+        }
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glPopDebugGroup();
@@ -178,6 +236,14 @@ void App::draw_ui(const double delta_time)
     ImGui::Begin("Stats", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
     {
         ImGui::Text("FPS: %.1f", 1.0 / delta_time);
+
+        ImGui::SeparatorText("Camera");
+        ImGui::InputFloat3(
+            "Position",
+            glm::value_ptr(m_camera.m_eye),
+            "%.3f",
+            ImGuiInputTextFlags_ReadOnly
+        );
     }
     ImGui::End();
 
@@ -201,13 +267,18 @@ void App::draw_ui(const double delta_time)
     ImGui::Begin("Sun", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
     {
         ImGui::SeparatorText("Transform");
-        ImGui::SliderFloat3("Position", glm::value_ptr(m_sun.m_position), -10.0f, 10.0f);
-        ImGui::SliderFloat3("Direction", glm::value_ptr(m_sun.m_direction), -10.0f, 10.0f);
+        ImGui::SliderFloat3("Position", glm::value_ptr(m_sun.m_position), -3'000.0f, 3'000.0f);
+        ImGui::SliderFloat3("Direction", glm::value_ptr(m_sun.m_direction), -3'000.0f, 3'000.0f);
 
         ImGui::SeparatorText("Color w/ Intensity");
         ImGui::ColorEdit3("Ambient", glm::value_ptr(m_sun.m_ambient));
         ImGui::ColorEdit3("Diffuse", glm::value_ptr(m_sun.m_diffuse));
         ImGui::ColorEdit3("Specular", glm::value_ptr(m_sun.m_specular));
+
+        ImGui::SeparatorText("Projection");
+        ImGui::SliderFloat("Left/Right", &m_sun.m_left_right, 0.0f, 10'000.0f);
+        ImGui::SliderFloat("Top/Bottom", &m_sun.m_top_bottom, 0.0f, 10'000.0f);
+        ImGui::SliderFloat("Z Far", &m_sun.m_z_far, 0.0f, 100'000.0f);
 
         ImGui::SeparatorText("Shadow Map");
         ImGui::Image(
@@ -217,27 +288,27 @@ void App::draw_ui(const double delta_time)
     }
     ImGui::End();
 
-    ImGui::Begin("Cube", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
-    {
-        ImGui::SeparatorText("Transform");
-        ImGui::SliderFloat3(
-            "Position",
-            glm::value_ptr(m_cube.m_transform.m_position),
-            -10.0f,
-            10.0f
-        );
-        ImGui::SliderFloat3(
-            "Rotation",
-            glm::value_ptr(m_cube.m_transform.m_rotation),
-            0.0f,
-            359.99f
-        );
-        ImGui::SliderFloat3("Scale", glm::value_ptr(m_cube.m_transform.m_scale), 0.0f, 100.0f);
-
-        ImGui::SeparatorText("Shading");
-        ImGui::SliderFloat("Shininess", &m_shininess, 0.0f, 512.0f);
-    }
-    ImGui::End();
+    // ImGui::Begin("Cube", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+    // {
+    //     ImGui::SeparatorText("Transform");
+    //     ImGui::SliderFloat3(
+    //         "Position",
+    //         glm::value_ptr(m_cube.m_transform.m_position),
+    //         -10.0f,
+    //         10.0f
+    //     );
+    //     ImGui::SliderFloat3(
+    //         "Rotation",
+    //         glm::value_ptr(m_cube.m_transform.m_rotation),
+    //         0.0f,
+    //         359.99f
+    //     );
+    //     ImGui::SliderFloat3("Scale", glm::value_ptr(m_cube.m_transform.m_scale), 0.0f, 100.0f);
+    //
+    //     ImGui::SeparatorText("Shading");
+    //     ImGui::SliderFloat("Shininess", &m_shininess, 0.0f, 512.0f);
+    // }
+    // ImGui::End();
 }
 
 void App::framebuffer_size_callback(GLFWwindow *window, const int width, const int height)

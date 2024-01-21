@@ -25,14 +25,22 @@ struct Transform
 
 struct Model
 {
-    Mesh m_mesh;
+    std::vector<Mesh> m_meshes;
     Transform m_transform;
 
     void draw(ShaderProgram &program) const
     {
         program.set_uniform("model", m_transform.get_model_matrix());
-        m_mesh.draw();
+        for (const auto &mesh : m_meshes)
+        {
+            mesh.draw();
+        }
     }
+};
+
+struct Material
+{
+
 };
 
 #endif // MODEL_H
