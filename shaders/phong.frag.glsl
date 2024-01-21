@@ -14,9 +14,10 @@ struct PointLight {
 struct DirectionalLight {
     vec3 direction;
 
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
+    vec3 color;
+    float ambient;
+    float diffuse;
+    float specular;
 
     sampler2D shadow_map;
 };
@@ -68,15 +69,15 @@ vec3 calc_directional_light(DirectionalLight light) {
     vec3 specular_reflection = vec3(0.0);
     vec3 normal = normalize(o_normal);
 
-    vec3 ambient = diffuse_reflection * light.ambient;
+    vec3 ambient = diffuse_reflection * light.ambient * light.color;
 
     vec3 light_dir = normalize(-light.direction);
-    vec3 diffuse = max(dot(normal, light_dir), 0.0) * diffuse_reflection * light.diffuse;
+    vec3 diffuse = max(dot(normal, light_dir), 0.0) * diffuse_reflection * light.diffuse * light.color;
 
     vec3 camera_dir = normalize(camera_position - o_frag_position);
     vec3 half_dir = normalize(light_dir + camera_dir);
     float specular_strength = pow(max(dot(normal, half_dir), 0.0), material.shininess);
-    vec3 specular = specular_strength * specular_reflection * light.specular;
+    vec3 specular = specular_strength * specular_reflection * light.specular * light.color;
 
     return ambient + (1.0 - shadow(light, normal)) * (diffuse + specular);
 }

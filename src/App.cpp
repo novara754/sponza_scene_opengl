@@ -39,7 +39,8 @@ App::App(GLFWwindow *window) : m_window(window)
             {
                 throw std::runtime_error(fmt::format("failed to get texture for material #{}", i));
             }
-        } else
+        }
+        else
         {
             diffuse_name = "white.png";
         }
@@ -215,6 +216,7 @@ void App::render(const double delta_time)
         m_phong_program.set_uniform("material.shininess", 64.0f);
 
         m_phong_program.set_uniform("sun.direction", m_sun.m_direction);
+        m_phong_program.set_uniform("sun.color", m_sun.m_color);
         m_phong_program.set_uniform("sun.ambient", m_sun.m_ambient);
         m_phong_program.set_uniform("sun.diffuse", m_sun.m_diffuse);
         m_phong_program.set_uniform("sun.specular", m_sun.m_specular);
@@ -294,9 +296,10 @@ void App::draw_ui(const double delta_time)
         ImGui::SliderFloat3("Direction", glm::value_ptr(m_sun.m_direction), -3'000.0f, 3'000.0f);
 
         ImGui::SeparatorText("Color w/ Intensity");
-        ImGui::ColorEdit3("Ambient", glm::value_ptr(m_sun.m_ambient));
-        ImGui::ColorEdit3("Diffuse", glm::value_ptr(m_sun.m_diffuse));
-        ImGui::ColorEdit3("Specular", glm::value_ptr(m_sun.m_specular));
+        ImGui::ColorEdit3("Color", glm::value_ptr(m_sun.m_color));
+        ImGui::SliderFloat("Diffuse", &m_sun.m_diffuse, 0.0f, 20.0f);
+        ImGui::SliderFloat("Ambient", &m_sun.m_ambient, 0.0f, 1.0f);
+        ImGui::SliderFloat("Specular", &m_sun.m_specular, 0.0f, 1.0f);
 
         ImGui::SeparatorText("Projection");
         ImGui::SliderFloat("Left/Right", &m_sun.m_left_right, 0.0f, 10'000.0f);
@@ -311,7 +314,11 @@ void App::draw_ui(const double delta_time)
     }
     ImGui::End();
 
-    ImGui::Begin("Post-Processing", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::Begin(
+        "Post-Processing",
+        nullptr,
+        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize
+    );
     {
         ImGui::SliderFloat("Gamma", &m_gamma, 0.0f, 3.0f);
     }

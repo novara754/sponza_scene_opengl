@@ -27,7 +27,7 @@ class Texture
     [[nodiscard]] GLuint get_handle() const;
 
   private:
-    static Texture attachment(int width, int height, GLenum format);
+    static Texture attachment(int width, int height, GLint internal_format, GLenum format);
 };
 
 #endif // TEXTURE_H

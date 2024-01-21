@@ -10,15 +10,15 @@ struct DirectionalLight
     glm::vec3 m_position;
     glm::vec3 m_direction;
 
-    glm::vec3 m_ambient;
-    glm::vec3 m_diffuse;
-    glm::vec3 m_specular;
+    glm::vec3 m_color;
+    float m_diffuse;
+    float m_ambient;
+    float m_specular;
 
     float m_left_right;
     float m_top_bottom;
     float m_z_near;
     float m_z_far;
-
 
     [[nodiscard]] glm::mat4 get_light_space_matrix() const
     {

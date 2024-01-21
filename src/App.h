@@ -19,7 +19,7 @@
 class App
 {
   public:
-    static constexpr int SHADOW_MAP_SIZE = 1024;
+    static constexpr int SHADOW_MAP_SIZE = 4096;
     static constexpr std::uint32_t WINDOW_WIDTH = 1280;
     static constexpr std::uint32_t WINDOW_HEIGHT = 720;
 
@@ -29,8 +29,8 @@ class App
     GLFWwindow *m_window;
 
     Camera m_camera{
-        .m_eye = {0.0f, 0.0f, -3.0f},
-        .m_forward = {0.0f, 0.0f, 1.0f},
+        .m_eye = {1170.0f, 145.0f, -40.0f},
+        .m_forward = {-1.0f, 0.0f, 0.0f},
         .m_up = {0.0f, 1.0f, 0.0f},
         .m_aspect = 1280.0f / 720.0f,
         .m_fov_y = 45.0f,
@@ -40,11 +40,12 @@ class App
     CameraController m_camera_controller;
 
     DirectionalLight m_sun{
-        .m_position = {0.0f, 3000.0f, 0.0f},
-        .m_direction = {0.0, -3000.0, 1.0},
-        .m_ambient = {0.1f, 0.1f, 0.1f},
-        .m_diffuse = {0.8f, 0.8f, 0.8f},
-        .m_specular = {0.8f, 0.8f, 0.8f},
+        .m_position = {20.0f, 3000.0f, -1.0f},
+        .m_direction = {-20.0f, -3000.0f, 1.0f},
+        .m_color = {1.0f, 1.0f, 1.0f},
+        .m_diffuse = 5.0f,
+        .m_ambient = 0.025f,
+        .m_specular = 0.8f,
         .m_left_right = 3000.0f,
         .m_top_bottom = 3000.0f,
         .m_z_near = 0.1f,

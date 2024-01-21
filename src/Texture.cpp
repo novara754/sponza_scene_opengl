@@ -71,15 +71,15 @@ std::shared_ptr<Texture> Texture::from_file_2d(const std::string &filename)
 
 Texture Texture::color_attachment(const int width, const int height)
 {
-    return attachment(width, height, GL_RGBA);
+    return attachment(width, height, GL_RGBA16F, GL_RGBA);
 }
 
 Texture Texture::depth_attachment(const int width, const int height)
 {
-    return attachment(width, height, GL_DEPTH_COMPONENT);
+    return attachment(width, height, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT);
 }
 
-Texture Texture::attachment(const int width, const int height, const GLenum format)
+Texture Texture::attachment(const int width, const int height, const GLint internal_format, const GLenum format)
 {
     GLuint texture;
     glGenTextures(1, &texture);
@@ -88,7 +88,7 @@ Texture Texture::attachment(const int width, const int height, const GLenum form
     glTexImage2D(
         GL_TEXTURE_2D,
         0,
-        static_cast<GLint>(format),
+        internal_format,
         width,
         height,
         0,
