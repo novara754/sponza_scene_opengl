@@ -11,8 +11,8 @@ struct DirectionalLight
     glm::vec3 m_direction;
 
     glm::vec3 m_color;
+    glm::vec3 m_ambient;
     float m_diffuse;
-    float m_ambient;
     float m_specular;
 
     float m_left_right;

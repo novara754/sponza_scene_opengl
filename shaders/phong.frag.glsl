@@ -15,7 +15,7 @@ struct DirectionalLight {
     vec3 direction;
 
     vec3 color;
-    float ambient;
+    vec3 ambient;
     float diffuse;
     float specular;
 
@@ -70,7 +70,7 @@ vec3 calc_directional_light(DirectionalLight light) {
     vec3 specular_reflection = vec3(0.0);
     vec3 normal = normalize(o_normal);
 
-    vec3 ambient = diffuse_reflection * light.ambient * light.color;
+    vec3 ambient = diffuse_reflection * light.ambient;
 
     vec3 light_dir = normalize(-light.direction);
     vec3 diffuse = max(dot(normal, light_dir), 0.0) * diffuse_reflection * light.diffuse * light.color;

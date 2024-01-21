@@ -6,6 +6,8 @@
 #include <stdexcept>
 
 #include <fmt/format.h>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/vec4.hpp>
 #include <spdlog/spdlog.h>
 
 std::shared_ptr<Texture> Texture::from_file_2d(const std::string &filename)
@@ -129,6 +131,11 @@ Texture Texture::attachment(const int width, const int height, const GLint inter
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    constexpr auto border = glm::vec4(0.0, 0.0, 0.0, 1.0);
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(border));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
     glBindTexture(GL_TEXTURE_2D, 0);
 

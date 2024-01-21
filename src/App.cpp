@@ -359,8 +359,8 @@ void App::draw_ui(const double delta_time)
 
         ImGui::SeparatorText("Color w/ Intensity");
         ImGui::ColorEdit3("Color", glm::value_ptr(m_sun.m_color));
+        ImGui::ColorEdit3("Ambient", glm::value_ptr(m_sun.m_ambient));
         ImGui::SliderFloat("Diffuse", &m_sun.m_diffuse, 0.0f, 20.0f);
-        ImGui::SliderFloat("Ambient", &m_sun.m_ambient, 0.0f, 1.0f);
         ImGui::SliderFloat("Specular", &m_sun.m_specular, 0.0f, 1.0f);
 
         ImGui::SeparatorText("Projection");

@@ -42,9 +42,9 @@ class App
     DirectionalLight m_sun{
         .m_position = {20.0f, 3000.0f, -1.0f},
         .m_direction = {-20.0f, -3000.0f, 1.0f},
-        .m_color = {1.0f, 1.0f, 1.0f},
+        .m_color = {1.0f, 0.8f, 0.52f},
+        .m_ambient = {0.18f, 0.20f, 0.21f},
         .m_diffuse = 5.0f,
-        .m_ambient = 0.025f,
         .m_specular = 0.8f,
         .m_left_right = 3000.0f,
         .m_top_bottom = 3000.0f,
@@ -58,7 +58,7 @@ class App
     };
     Framebuffer m_shadow_map_framebuffer;
 
-    int m_bloom_amount{5};
+    int m_bloom_amount{1};
     ShaderProgram m_bloom_program;
     std::array<Texture, 2> m_bloom_ping_pong_attachments{
         Texture::color_attachment(WINDOW_WIDTH, WINDOW_HEIGHT),
