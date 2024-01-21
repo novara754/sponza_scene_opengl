@@ -2,10 +2,10 @@
 #define APP_H
 
 #include <memory>
+#include <array>
 
 #include <GLFW/glfw3.h>
 #include <assimp/Importer.hpp>
-#include <assimp/scene.h>
 
 #include "Camera.h"
 #include "DirectionalLight.h"
@@ -32,7 +32,7 @@ class App
         .m_eye = {1170.0f, 145.0f, -40.0f},
         .m_forward = {-1.0f, 0.0f, 0.0f},
         .m_up = {0.0f, 1.0f, 0.0f},
-        .m_aspect = 1280.0f / 720.0f,
+        .m_aspect = static_cast<float>(WINDOW_WIDTH) / static_cast<float>(WINDOW_HEIGHT),
         .m_fov_y = 45.0f,
         .m_z_near = 0.1f,
         .m_z_far = 10'000.0f,
@@ -58,8 +58,17 @@ class App
     };
     Framebuffer m_shadow_map_framebuffer;
 
-    Texture m_post_processing_color_attachment{Texture::color_attachment(1280, 720)};
-    Texture m_post_processing_depth_attachment{Texture::depth_attachment(1280, 720)};
+    int m_bloom_amount{5};
+    ShaderProgram m_bloom_program;
+    std::array<Texture, 2> m_bloom_ping_pong_attachments{
+        Texture::color_attachment(WINDOW_WIDTH, WINDOW_HEIGHT),
+        Texture::color_attachment(WINDOW_WIDTH, WINDOW_HEIGHT),
+    };
+    std::array<Framebuffer, 2> m_bloom_ping_pong_framebuffers;
+
+    Texture m_post_processing_color_attachment{Texture::color_attachment(WINDOW_WIDTH, WINDOW_HEIGHT)};
+    Texture m_post_processing_color_attachment_bright{Texture::color_attachment(WINDOW_WIDTH, WINDOW_HEIGHT)};
+    Texture m_post_processing_depth_attachment{Texture::depth_attachment(WINDOW_WIDTH, WINDOW_HEIGHT)};
     Framebuffer m_post_processing_framebuffer;
 
     ShaderProgram m_post_processing_program;

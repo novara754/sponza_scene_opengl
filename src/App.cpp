@@ -1,9 +1,11 @@
 #include "App.h"
 
+#include <array>
 #include <stdexcept>
 
 #include <GLFW/glfw3.h>
 #include <assimp/postprocess.h>
+#include <assimp/scene.h>
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.inl>
 #include <spdlog/spdlog.h>
@@ -92,6 +94,13 @@ App::App(GLFWwindow *window) : m_window(window)
     }
     m_models.emplace_back(meshes, Transform({0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}));
 
+    m_bloom_program.attach_shader(GL_VERTEX_SHADER, "./shaders/postprocessing.vert.glsl");
+    m_bloom_program.attach_shader(GL_FRAGMENT_SHADER, "./shaders/gaussian.frag.glsl");
+    m_bloom_program.link();
+
+    m_bloom_ping_pong_framebuffers[0].set_color_attachment(m_bloom_ping_pong_attachments[0]);
+    m_bloom_ping_pong_framebuffers[1].set_color_attachment(m_bloom_ping_pong_attachments[1]);
+
     m_depth_program.attach_shader(GL_VERTEX_SHADER, "./shaders/depth.vert.glsl");
     m_depth_program.attach_shader(GL_FRAGMENT_SHADER, "./shaders/depth.frag.glsl");
     m_depth_program.link();
@@ -100,8 +109,18 @@ App::App(GLFWwindow *window) : m_window(window)
     m_shadow_map_framebuffer.set_draw_buffer(GL_NONE);
     m_shadow_map_framebuffer.set_read_buffer(GL_NONE);
 
-    m_post_processing_framebuffer.set_color_attachment(m_post_processing_color_attachment);
+    m_post_processing_framebuffer.set_color_attachment(
+        m_post_processing_color_attachment,
+        GL_COLOR_ATTACHMENT0
+    );
+    m_post_processing_framebuffer.set_color_attachment(
+        m_post_processing_color_attachment_bright,
+        GL_COLOR_ATTACHMENT1
+    );
     m_post_processing_framebuffer.set_depth_attachment(m_post_processing_depth_attachment);
+    m_post_processing_framebuffer.set_draw_buffers(
+        std::array<GLenum, 2>{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1}
+    );
 
     m_phong_program.attach_shader(GL_VERTEX_SHADER, "./shaders/phong.vert.glsl");
     m_phong_program.attach_shader(GL_FRAGMENT_SHADER, "./shaders/phong.frag.glsl");
@@ -196,7 +215,7 @@ void App::render(const double delta_time)
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
 
-        glClearColor(0.1, 0.1, 0.1, 1.0);
+        glClearColor(0.0, 0.0, 0.0, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         m_phong_program.use();
@@ -233,6 +252,31 @@ void App::render(const double delta_time)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glPopDebugGroup();
 
+    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Bloom Ping-Pong Render Pass");
+    {
+        auto horizontal = true;
+        auto first_iteration = true;
+        m_bloom_program.use();
+        for (auto i = 0; i < 2 * m_bloom_amount; ++i)
+        {
+            m_bloom_ping_pong_framebuffers[static_cast<int>(horizontal)].bind();
+            m_bloom_program.set_uniform("horizontal", horizontal);
+            if (first_iteration)
+            {
+                m_post_processing_color_attachment_bright.bind(GL_TEXTURE0);
+            }
+            else
+            {
+                m_bloom_ping_pong_attachments[static_cast<int>(!horizontal)].bind(GL_TEXTURE0);
+            }
+            m_post_processing_plane.draw();
+            horizontal = !horizontal;
+            first_iteration = false;
+        }
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glPopDebugGroup();
+
     glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Post-Processing Render Pass");
     {
         glDisable(GL_DEPTH_TEST);
@@ -240,7 +284,10 @@ void App::render(const double delta_time)
         m_post_processing_program.use();
         m_post_processing_program.set_uniform("gamma", m_gamma);
         m_post_processing_program.set_uniform("exposure", m_exposure);
+        m_post_processing_program.set_uniform("screen_texture", 0);
+        m_post_processing_program.set_uniform("bloom_texture", 1);
         m_post_processing_color_attachment.bind(GL_TEXTURE0);
+        m_bloom_ping_pong_attachments[0].bind(GL_TEXTURE1);
         m_post_processing_plane.draw();
     }
     glPopDebugGroup();
@@ -323,6 +370,7 @@ void App::draw_ui(const double delta_time)
     {
         ImGui::SliderFloat("Gamma", &m_gamma, 0.0f, 3.0f);
         ImGui::SliderFloat("Exposure", &m_exposure, 0.0f, 10.0f);
+        ImGui::SliderInt("Bloom Steps", &m_bloom_amount, 0, 10);
     }
     ImGui::End();
 }

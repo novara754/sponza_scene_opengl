@@ -12,14 +12,25 @@ Framebuffer::~Framebuffer()
     glDeleteFramebuffers(1, &m_framebuffer);
 }
 
-void Framebuffer::set_color_attachment(const Texture &texture)
+void Framebuffer::set_color_attachment(const Texture &texture, const GLenum attachment)
 {
-    set_attachment(texture, GL_COLOR_ATTACHMENT0);
+    if (attachment < GL_COLOR_ATTACHMENT0 || attachment > GL_COLOR_ATTACHMENT31)
+    {
+        throw std::runtime_error("invalid color attachment");
+    }
+    set_attachment(texture, attachment);
 }
 
 void Framebuffer::set_depth_attachment(const Texture &texture)
 {
     set_attachment(texture, GL_DEPTH_ATTACHMENT);
+}
+
+void Framebuffer::set_draw_buffers(const std::span<const GLenum> attachments)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
+    glDrawBuffers(attachments.size(), attachments.data());
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void Framebuffer::set_draw_buffer(const GLenum mode)

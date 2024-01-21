@@ -38,7 +38,8 @@ uniform DirectionalLight sun;
 uniform PointLight light;
 uniform Material material;
 
-out vec4 frag_color;
+layout (location = 0) out vec4 frag_color;
+layout (location = 1) out vec4 bright_color;
 
 float shadow(DirectionalLight light, vec3 normal) {
     vec3 proj_coords = o_light_space_frag_position.xyz / o_light_space_frag_position.w;
@@ -107,5 +108,14 @@ void main() {
     vec3 color = vec3(0.0);
     color += calc_directional_light(sun);
     color += calc_point_light(light);
-    frag_color = vec4(color, 1.0);
+    vec4 result_color = vec4(color, 1.0);
+
+    frag_color = result_color;
+
+    float brightness = dot(result_color.rgb, vec3(0.2126, 0.7152, 0.0722));
+    if (brightness > 1.0) {
+        bright_color = result_color;
+    } else {
+        bright_color = vec4(0.0, 0.0, 0.0, 1.0);
+    }
 }

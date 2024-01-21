@@ -3,6 +3,7 @@
 in vec2 o_tex_coords;
 
 uniform sampler2D screen_texture;
+uniform sampler2D bloom_texture;
 uniform float gamma;
 uniform float exposure;
 
@@ -27,6 +28,8 @@ vec3 tone_mapping(vec3 color) {
 
 void main() {
     vec3 color = texture(screen_texture, o_tex_coords).rgb;
+    vec3 bloom = texture(bloom_texture, o_tex_coords).rgb;
+    color += bloom;
     //    color = grayscale(color);
     color = tone_mapping(color);
     color = gamma_correct(color);

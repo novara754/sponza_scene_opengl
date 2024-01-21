@@ -1,9 +1,11 @@
 #ifndef FRAMEBUFFER_H
 #define FRAMEBUFFER_H
 
-#include "Texture.h"
+#include <span>
 
 #include <glad/glad.h>
+
+#include "Texture.h"
 
 class Framebuffer
 {
@@ -15,9 +17,10 @@ class Framebuffer
     const Framebuffer &operator=(const Framebuffer &) = delete;
     ~Framebuffer();
 
-    void set_color_attachment(const Texture &texture);
+    void set_color_attachment(const Texture &texture, GLenum attachment = GL_COLOR_ATTACHMENT0);
     void set_depth_attachment(const Texture &texture);
 
+    void set_draw_buffers(std::span<const GLenum> attachments);
     void set_draw_buffer(GLenum mode);
     void set_read_buffer(GLenum mode);
 

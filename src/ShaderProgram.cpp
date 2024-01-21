@@ -1,5 +1,6 @@
 #include "ShaderProgram.h"
 
+#include <fmt/format.h>
 #include <fstream>
 #include <sstream>
 
@@ -17,6 +18,10 @@ ShaderProgram::~ShaderProgram()
 void ShaderProgram::attach_shader(GLenum shader_type, const std::string &filepath)
 {
     std::ifstream shader_file(filepath);
+    if (!shader_file.is_open())
+    {
+        throw std::runtime_error(fmt::format("failed to open shader source file '{}'", filepath));
+    }
     std::stringstream ss;
     ss << shader_file.rdbuf();
     std::string shader_src = ss.str();
