@@ -8,7 +8,7 @@
 struct DirectionalLight
 {
     glm::vec3 m_position;
-    glm::vec3 m_direction;
+    glm::vec3 m_rotation;
 
     glm::vec3 m_color;
     glm::vec3 m_ambient;
@@ -24,9 +24,14 @@ struct DirectionalLight
     {
         // ReSharper disable once CppRedundantQualifier
         const auto view =
-            glm::lookAtRH(m_position, m_position + m_direction, glm::vec3(0.0f, 1.0f, 0.0f));
+            glm::lookAtRH(m_position, m_position + get_direction(), glm::vec3(0.0f, 1.0f, 0.0f));
         const auto projection = glm::ortho(-m_left_right, m_left_right, -m_top_bottom, m_top_bottom, m_z_near, m_z_far);
         return projection * view;
+    }
+
+    [[nodiscard]] glm::vec3 get_direction() const
+    {
+        return glm::quat(m_rotation / 180.0f * 3.141592f) * glm::vec3(0.0, 0.0, 1.0);
     }
 };
 

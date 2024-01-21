@@ -256,7 +256,7 @@ void App::render(const double delta_time)
         m_phong_program.set_uniform("material.normal_map", 1);
         m_phong_program.set_uniform("material.shininess", 64.0f);
 
-        m_phong_program.set_uniform("sun.direction", m_sun.m_direction);
+        m_phong_program.set_uniform("sun.direction", m_sun.get_direction());
         m_phong_program.set_uniform("sun.color", m_sun.m_color);
         m_phong_program.set_uniform("sun.ambient", m_sun.m_ambient);
         m_phong_program.set_uniform("sun.diffuse", m_sun.m_diffuse);
@@ -371,7 +371,7 @@ void App::draw_ui(const double delta_time)
     {
         ImGui::SeparatorText("Transform");
         ImGui::SliderFloat3("Position", glm::value_ptr(m_sun.m_position), -3'000.0f, 3'000.0f);
-        ImGui::SliderFloat3("Direction", glm::value_ptr(m_sun.m_direction), -3'000.0f, 3'000.0f);
+        ImGui::SliderFloat3("Rotation", glm::value_ptr(m_sun.m_rotation), 0.0f, 359.999f);
 
         ImGui::SeparatorText("Color w/ Intensity");
         ImGui::ColorEdit3("Color", glm::value_ptr(m_sun.m_color));

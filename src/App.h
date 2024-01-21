@@ -41,7 +41,7 @@ class App
 
     DirectionalLight m_sun{
         .m_position = {20.0f, 3000.0f, -1.0f},
-        .m_direction = {-20.0f, -3000.0f, 1.0f},
+        .m_rotation = {90.0f, 0.0f, 0.0f},
         .m_color = {1.0f, 0.8f, 0.52f},
         .m_ambient = {0.18f, 0.20f, 0.21f},
         .m_diffuse = 5.0f,
