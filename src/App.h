@@ -104,7 +104,6 @@ class App
     })};
     Mesh m_skybox_mesh{Mesh::skybox()};
 
-    ShaderProgram m_phong_program;
     std::vector<Model> m_models;
     std::vector<std::shared_ptr<Material>> m_materials;
 

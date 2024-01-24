@@ -162,10 +162,6 @@ App::App(GLFWwindow *window) : m_window(window)
     m_skybox_program.attach_shader(GL_FRAGMENT_SHADER, "./shaders/skybox.frag.glsl");
     m_skybox_program.link();
 
-    m_phong_program.attach_shader(GL_VERTEX_SHADER, "./shaders/phong.vert.glsl");
-    m_phong_program.attach_shader(GL_FRAGMENT_SHADER, "./shaders/phong.frag.glsl");
-    m_phong_program.link();
-
     m_post_processing_program.attach_shader(GL_VERTEX_SHADER, "./shaders/postprocessing.vert.glsl");
     m_post_processing_program.attach_shader(
         GL_FRAGMENT_SHADER,
