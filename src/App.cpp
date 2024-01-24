@@ -255,8 +255,7 @@ void App::render(const double delta_time)
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
 
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_DEPTH_BUFFER_BIT);
 
         m_geometry_program.use();
         m_geometry_program.set_uniform("view", m_camera.get_view_matrix());
@@ -277,6 +276,7 @@ void App::render(const double delta_time)
     glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Deferred Shading Render Pass");
     m_post_processing_framebuffer.bind();
     {
+        glDepthMask(GL_FALSE);
         m_deferred_shading_program.use();
         m_deferred_shading_program.set_uniform("camera_position", m_camera.m_eye);
         m_deferred_shading_program.set_uniform("sun.direction", m_sun.get_direction());
@@ -295,15 +295,16 @@ void App::render(const double delta_time)
         m_g_buffer_normals.bind(GL_TEXTURE3);
         m_post_processing_plane.draw();
 
-        // const auto camera_view = m_camera.get_view_matrix();
-        // const auto camera_view_no_translation = glm::mat4(glm::mat3(camera_view));
-        // glDepthFunc(GL_LEQUAL);
-        // m_skybox_program.use();
-        // m_skybox_program.set_uniform("view", camera_view_no_translation);
-        // m_skybox_program.set_uniform("projection", m_camera.get_projection_matrix());
-        // m_skybox_texture->bind(GL_TEXTURE0);
-        // m_skybox_mesh.draw();
-        // glDepthFunc(GL_LESS);
+        glDepthMask(GL_TRUE);
+        const auto camera_view = m_camera.get_view_matrix();
+        const auto camera_view_no_translation = glm::mat4(glm::mat3(camera_view));
+        glDepthFunc(GL_LEQUAL);
+        m_skybox_program.use();
+        m_skybox_program.set_uniform("view", camera_view_no_translation);
+        m_skybox_program.set_uniform("projection", m_camera.get_projection_matrix());
+        m_skybox_texture->bind(GL_TEXTURE0);
+        m_skybox_mesh.draw();
+        glDepthFunc(GL_LESS);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glPopDebugGroup();
