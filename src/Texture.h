@@ -15,7 +15,7 @@ class Texture
   public:
     static std::shared_ptr<Texture> from_file_2d(const std::string &filename, bool is_srgb = true);
     static std::shared_ptr<Texture> from_file_cubemap(std::span<const std::string> faces);
-    static Texture color_attachment(int width, int height);
+    static Texture color_attachment(int width, int height, const GLint internal_format, const GLenum format);
     static Texture depth_attachment(int width, int height);
 
     explicit Texture(GLuint texture, GLenum target);

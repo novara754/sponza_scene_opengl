@@ -100,9 +100,11 @@ std::shared_ptr<Texture> Texture::from_file_cubemap(
     return std::make_shared<Texture>(texture, GL_TEXTURE_CUBE_MAP);
 }
 
-Texture Texture::color_attachment(const int width, const int height)
+Texture Texture::color_attachment(
+    const int width, const int height, const GLint internal_format, const GLenum format
+)
 {
-    return attachment(width, height, GL_RGBA16F, GL_RGBA);
+    return attachment(width, height, internal_format, format);
 }
 
 Texture Texture::depth_attachment(const int width, const int height)
