@@ -1,8 +1,8 @@
 #ifndef APP_H
 #define APP_H
 
-#include <memory>
 #include <array>
+#include <memory>
 
 #include <GLFW/glfw3.h>
 #include <assimp/Importer.hpp>
@@ -61,14 +61,31 @@ class App
     int m_bloom_amount{1};
     ShaderProgram m_bloom_program;
     std::array<Texture, 2> m_bloom_ping_pong_attachments{
-        Texture::color_attachment(WINDOW_WIDTH, WINDOW_HEIGHT),
-        Texture::color_attachment(WINDOW_WIDTH, WINDOW_HEIGHT),
+        Texture::color_attachment(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA16F, GL_RGBA),
+        Texture::color_attachment(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA16F, GL_RGBA),
     };
     std::array<Framebuffer, 2> m_bloom_ping_pong_framebuffers;
 
-    Texture m_post_processing_color_attachment{Texture::color_attachment(WINDOW_WIDTH, WINDOW_HEIGHT)};
-    Texture m_post_processing_color_attachment_bright{Texture::color_attachment(WINDOW_WIDTH, WINDOW_HEIGHT)};
-    Texture m_post_processing_depth_attachment{Texture::depth_attachment(WINDOW_WIDTH, WINDOW_HEIGHT)};
+    ShaderProgram m_geometry_program;
+    Texture m_g_buffer_albedo{Texture::color_attachment(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGB, GL_RGB)
+    };
+    Texture m_g_buffer_positions{
+        Texture::color_attachment(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA16F, GL_RGBA)
+    };
+    Texture m_g_buffer_normals{
+        Texture::color_attachment(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGB16F, GL_RGB)
+    };
+    Texture m_g_buffer_depth{Texture::depth_attachment(WINDOW_WIDTH, WINDOW_HEIGHT)};
+    Framebuffer m_geometry_buffer;
+
+    ShaderProgram m_deferred_shading_program;
+
+    Texture m_post_processing_color_attachment{
+        Texture::color_attachment(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA16F, GL_RGBA)
+    };
+    Texture m_post_processing_color_attachment_bright{
+        Texture::color_attachment(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA16F, GL_RGBA)
+    };
     Framebuffer m_post_processing_framebuffer;
 
     ShaderProgram m_post_processing_program;

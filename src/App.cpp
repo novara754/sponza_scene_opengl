@@ -23,7 +23,8 @@ App::App(GLFWwindow *window) : m_window(window)
 {
     const auto *scene = m_assimp_importer.ReadFile(
         "./assets/sponza.gltf",
-        aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace
+        aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_FlipUVs |
+            aiProcess_CalcTangentSpace
     );
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
@@ -39,7 +40,9 @@ App::App(GLFWwindow *window) : m_window(window)
         {
             if (material->GetTexture(aiTextureType_DIFFUSE, 0, &diffuse_name) != aiReturn_SUCCESS)
             {
-                throw std::runtime_error(fmt::format("failed to get diffuse texture for material #{}", i));
+                throw std::runtime_error(
+                    fmt::format("failed to get diffuse texture for material #{}", i)
+                );
             }
         }
         else
@@ -54,7 +57,9 @@ App::App(GLFWwindow *window) : m_window(window)
         {
             if (material->GetTexture(aiTextureType_NORMALS, 0, &normal_name) != aiReturn_SUCCESS)
             {
-                throw std::runtime_error(fmt::format("failed to get normal texture for material #{}", i));
+                throw std::runtime_error(
+                    fmt::format("failed to get normal texture for material #{}", i)
+                );
             }
         }
         else
@@ -124,6 +129,22 @@ App::App(GLFWwindow *window) : m_window(window)
     m_shadow_map_framebuffer.set_draw_buffer(GL_NONE);
     m_shadow_map_framebuffer.set_read_buffer(GL_NONE);
 
+    m_geometry_program.attach_shader(GL_VERTEX_SHADER, "./shaders/g_buffer.vert.glsl");
+    m_geometry_program.attach_shader(GL_FRAGMENT_SHADER, "./shaders/g_buffer.frag.glsl");
+    m_geometry_program.link();
+
+    m_geometry_buffer.set_color_attachment(m_g_buffer_albedo, GL_COLOR_ATTACHMENT0);
+    m_geometry_buffer.set_color_attachment(m_g_buffer_positions, GL_COLOR_ATTACHMENT1);
+    m_geometry_buffer.set_color_attachment(m_g_buffer_normals, GL_COLOR_ATTACHMENT2);
+    m_geometry_buffer.set_depth_attachment(m_g_buffer_depth);
+    m_geometry_buffer.set_draw_buffers(
+        std::array<GLenum, 3>{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2}
+    );
+
+    m_deferred_shading_program.attach_shader(GL_VERTEX_SHADER, "./shaders/deferred_shading.vert.glsl");
+    m_deferred_shading_program.attach_shader(GL_FRAGMENT_SHADER, "./shaders/deferred_shading.frag.glsl");
+    m_deferred_shading_program.link();
+
     m_post_processing_framebuffer.set_color_attachment(
         m_post_processing_color_attachment,
         GL_COLOR_ATTACHMENT0
@@ -132,7 +153,7 @@ App::App(GLFWwindow *window) : m_window(window)
         m_post_processing_color_attachment_bright,
         GL_COLOR_ATTACHMENT1
     );
-    m_post_processing_framebuffer.set_depth_attachment(m_post_processing_depth_attachment);
+    m_post_processing_framebuffer.set_depth_attachment(m_g_buffer_depth);
     m_post_processing_framebuffer.set_draw_buffers(
         std::array<GLenum, 2>{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1}
     );
@@ -227,57 +248,62 @@ void App::render(const double delta_time)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glPopDebugGroup();
 
-    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Scene Render Pass");
+    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Geometry Buffer Render Pass");
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-    m_post_processing_framebuffer.bind();
+    m_geometry_buffer.bind();
     {
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
 
-        glClear(GL_DEPTH_BUFFER_BIT);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        const auto view = m_camera.get_view_matrix();
-        const auto view_no_translation = glm::mat4(glm::mat3(view));
+        m_geometry_program.use();
+        m_geometry_program.set_uniform("view", m_camera.get_view_matrix());
+        m_geometry_program.set_uniform("projection", m_camera.get_projection_matrix());
+        m_geometry_program.set_uniform("camera_position", m_camera.m_eye);
 
-        m_phong_program.use();
-        m_phong_program.set_uniform("view", m_camera.get_view_matrix());
-        m_phong_program.set_uniform("projection", m_camera.get_projection_matrix());
-        m_phong_program.set_uniform("camera_position", m_camera.m_eye);
-
-        m_phong_program.set_uniform("light.position", m_light.m_position);
-        m_phong_program.set_uniform("light.ambient", m_light.m_ambient);
-        m_phong_program.set_uniform("light.diffuse", m_light.m_diffuse);
-        m_phong_program.set_uniform("light.specular", m_light.m_specular);
-        m_phong_program.set_uniform("light.constant", m_light.m_constant_attenuation);
-        m_phong_program.set_uniform("light.linear", m_light.m_linear_attenuation);
-        m_phong_program.set_uniform("light.quadratic", m_light.m_quadratic_attenuation);
-
-        m_phong_program.set_uniform("material.diffuse_map", 0);
-        m_phong_program.set_uniform("material.normal_map", 1);
-        m_phong_program.set_uniform("material.shininess", 64.0f);
-
-        m_phong_program.set_uniform("sun.direction", m_sun.get_direction());
-        m_phong_program.set_uniform("sun.color", m_sun.m_color);
-        m_phong_program.set_uniform("sun.ambient", m_sun.m_ambient);
-        m_phong_program.set_uniform("sun.diffuse", m_sun.m_diffuse);
-        m_phong_program.set_uniform("sun.specular", m_sun.m_specular);
-        m_phong_program.set_uniform("sun.shadow_map", 2);
-        m_phong_program.set_uniform("light_space", m_sun.get_light_space_matrix());
-
-        m_shadow_map_depth_attachment.bind(GL_TEXTURE2);
+        m_geometry_program.set_uniform("material.diffuse_map", 0);
+        m_geometry_program.set_uniform("material.normal_map", 1);
 
         for (const auto &model : m_models)
         {
-            model.draw(m_phong_program);
+            model.draw(m_geometry_program);
         }
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glPopDebugGroup();
 
-        glDepthFunc(GL_LEQUAL);
-        m_skybox_program.use();
-        m_skybox_program.set_uniform("view", view_no_translation);
-        m_skybox_program.set_uniform("projection", m_camera.get_projection_matrix());
-        m_skybox_texture->bind(GL_TEXTURE0);
-        m_skybox_mesh.draw();
-        glDepthFunc(GL_LESS);
+    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Deferred Shading Render Pass");
+    m_post_processing_framebuffer.bind();
+    {
+        m_deferred_shading_program.use();
+        m_deferred_shading_program.set_uniform("camera_position", m_camera.m_eye);
+        m_deferred_shading_program.set_uniform("sun.direction", m_sun.get_direction());
+        m_deferred_shading_program.set_uniform("sun.color", m_sun.m_color);
+        m_deferred_shading_program.set_uniform("sun.ambient", m_sun.m_ambient);
+        m_deferred_shading_program.set_uniform("sun.diffuse", m_sun.m_diffuse);
+        m_deferred_shading_program.set_uniform("sun.specular", m_sun.m_specular);
+        m_deferred_shading_program.set_uniform("sun.shadow_map", 0);
+        m_deferred_shading_program.set_uniform("sun.transform", m_sun.get_light_space_matrix());
+        m_deferred_shading_program.set_uniform("albedo_map", 1);
+        m_deferred_shading_program.set_uniform("positions_map", 2);
+        m_deferred_shading_program.set_uniform("normals_map", 3);
+        m_shadow_map_depth_attachment.bind(GL_TEXTURE0);
+        m_g_buffer_albedo.bind(GL_TEXTURE1);
+        m_g_buffer_positions.bind(GL_TEXTURE2);
+        m_g_buffer_normals.bind(GL_TEXTURE3);
+        m_post_processing_plane.draw();
+
+        // const auto camera_view = m_camera.get_view_matrix();
+        // const auto camera_view_no_translation = glm::mat4(glm::mat3(camera_view));
+        // glDepthFunc(GL_LEQUAL);
+        // m_skybox_program.use();
+        // m_skybox_program.set_uniform("view", camera_view_no_translation);
+        // m_skybox_program.set_uniform("projection", m_camera.get_projection_matrix());
+        // m_skybox_texture->bind(GL_TEXTURE0);
+        // m_skybox_mesh.draw();
+        // glDepthFunc(GL_LESS);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glPopDebugGroup();
