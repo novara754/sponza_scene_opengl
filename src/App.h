@@ -29,15 +29,16 @@ class App
     GLFWwindow *m_window;
 
     Camera m_camera{
-        .m_eye = {1170.0f, 145.0f, -40.0f},
-        .m_forward = {-1.0f, 0.0f, 0.0f},
+        .m_eye = {-1250.0f, 85.0f, 75.0f},
+        .m_yaw = 350.0f,
+        .m_pitch = 14.0f,
         .m_up = {0.0f, 1.0f, 0.0f},
         .m_aspect = static_cast<float>(WINDOW_WIDTH) / static_cast<float>(WINDOW_HEIGHT),
         .m_fov_y = 45.0f,
         .m_z_near = 0.1f,
         .m_z_far = 10'000.0f,
     };
-    CameraController m_camera_controller;
+    CameraController m_camera_controller{WINDOW_WIDTH, WINDOW_HEIGHT};
 
     DirectionalLight m_sun{
         .m_position = {20.0f, 3000.0f, -1.0f},
@@ -135,6 +136,10 @@ class App
     );
 
     static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
+
+    static void cursor_pos_callback(GLFWwindow *window, double x, double y);
+
+    static void mouse_button_callback(GLFWwindow *window, int button, int action, int mods);
 };
 
 #endif // APP_H

@@ -141,8 +141,14 @@ App::App(GLFWwindow *window) : m_window(window)
         std::array<GLenum, 3>{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2}
     );
 
-    m_deferred_shading_program.attach_shader(GL_VERTEX_SHADER, "./shaders/deferred_shading.vert.glsl");
-    m_deferred_shading_program.attach_shader(GL_FRAGMENT_SHADER, "./shaders/deferred_shading.frag.glsl");
+    m_deferred_shading_program.attach_shader(
+        GL_VERTEX_SHADER,
+        "./shaders/deferred_shading.vert.glsl"
+    );
+    m_deferred_shading_program.attach_shader(
+        GL_FRAGMENT_SHADER,
+        "./shaders/deferred_shading.frag.glsl"
+    );
     m_deferred_shading_program.link();
 
     m_post_processing_framebuffer.set_color_attachment(
@@ -180,6 +186,8 @@ int App::run()
     glfwSetFramebufferSizeCallback(m_window, framebuffer_size_callback);
 
     glfwSetKeyCallback(m_window, key_callback);
+    glfwSetCursorPosCallback(m_window, cursor_pos_callback);
+    glfwSetMouseButtonCallback(m_window, mouse_button_callback);
 
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageControl(
@@ -495,12 +503,39 @@ void GLAPIENTRY App::debug_message_callback(
     spdlog::info("[{}] [{}] {}", msg_type, severity, msg);
 }
 
-void App::key_callback(GLFWwindow *window, const int key, const int /*scancode*/, const int action, const int /*mods*/)
+void App::key_callback(
+    GLFWwindow *window, const int key, const int /*scancode*/, const int action, const int /*mods*/
+)
 {
-    auto *app = static_cast<App*>(glfwGetWindowUserPointer(window));
+    auto *app = static_cast<App *>(glfwGetWindowUserPointer(window));
 
     if (key == GLFW_KEY_H && action == GLFW_PRESS)
     {
         app->m_show_ui = !app->m_show_ui;
+    }
+}
+
+void App::cursor_pos_callback(GLFWwindow *window, double x, double y)
+{
+    auto *app = static_cast<App *>(glfwGetWindowUserPointer(window));
+
+    if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
+    {
+        app->m_camera_controller.update_mouse(x, y);
+    }
+}
+
+void App::mouse_button_callback(GLFWwindow *window, const int button, const int action, int /*mods*/)
+{
+   if (button == GLFW_MOUSE_BUTTON_RIGHT)
+    {
+        if (action == GLFW_PRESS)
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        }
+        else
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
     }
 }
