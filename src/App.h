@@ -117,6 +117,8 @@ class App
         .m_quadratic_attenuation = 0.032f,
     };
 
+    bool m_show_ui{true};
+
   public:
     explicit App(GLFWwindow *window);
     int run();
@@ -126,10 +128,13 @@ class App
     void draw_ui(const double delta_time);
 
     static void framebuffer_size_callback(GLFWwindow *window, int width, int height);
+
     static void GLAPIENTRY debug_message_callback(
         GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
         const GLchar *message, const void *userParam
     );
+
+    static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 };
 
 #endif // APP_H

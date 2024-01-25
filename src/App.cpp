@@ -179,6 +179,8 @@ int App::run()
     glfwSetWindowUserPointer(m_window, this);
     glfwSetFramebufferSizeCallback(m_window, framebuffer_size_callback);
 
+    glfwSetKeyCallback(m_window, key_callback);
+
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageControl(
         GL_DONT_CARE,
@@ -345,16 +347,19 @@ void App::render(const double delta_time)
     }
     glPopDebugGroup();
 
-    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "ImGui Render Pass");
+    if (m_show_ui)
     {
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        draw_ui(delta_time);
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "ImGui Render Pass");
+        {
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+            draw_ui(delta_time);
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        }
+        glPopDebugGroup();
     }
-    glPopDebugGroup();
 }
 
 void App::draw_ui(const double delta_time)
@@ -488,4 +493,14 @@ void GLAPIENTRY App::debug_message_callback(
     }
 
     spdlog::info("[{}] [{}] {}", msg_type, severity, msg);
+}
+
+void App::key_callback(GLFWwindow *window, const int key, const int /*scancode*/, const int action, const int /*mods*/)
+{
+    auto *app = static_cast<App*>(glfwGetWindowUserPointer(window));
+
+    if (key == GLFW_KEY_H && action == GLFW_PRESS)
+    {
+        app->m_show_ui = !app->m_show_ui;
+    }
 }
