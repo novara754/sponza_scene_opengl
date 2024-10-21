@@ -67,6 +67,7 @@ Vcpkg is included as a git submodule, as such you should execute `git submodule 
 in the project directory to ensure everything is ready. CMake will automatically
 invoke vcpkg to download and install the required dependencies. This can take a while
 the first time.
+By default [Ninja] is configured as the build system, so that will need to be install as well.
 
 You might need to install additional system dependencies to be able to compile the project.
 On Ubuntu `libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev pkg-config` are required.
@@ -76,12 +77,16 @@ To build the project the following commands can be used:
 $ mkdir build
 $ cmake --preset Debug -B build
 $ cd build
-$ cmake --build --target sponza_scene --config Debug --preset Debug
+$ cmake --build .
 ```
 These commands should work on Linux and Windows.
 
+Do note that downloading and building the dependencies can take a while. Especially [Assimp]
+sadly takes quite a while to compile because it is a big library.
+
 [CMake]: https://cmake.org/
 [vcpkg]: https://vcpkg.io/en/cmake
+[Ninja]: https://ninja-build.org/
 
 ## Credits
  - Sponza model: https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/Sponza
