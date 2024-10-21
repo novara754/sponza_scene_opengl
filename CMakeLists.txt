@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5)
 project(sponza_scene)
 
 find_package(fmt CONFIG REQUIRED)
