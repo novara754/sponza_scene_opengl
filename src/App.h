@@ -124,6 +124,8 @@ class App
     explicit App(GLFWwindow *window);
     int run();
 
+    static void glfw_error_callback(int error, const char *desc);
+
   private:
     void render(const double delta_time);
     void draw_ui(const double delta_time);

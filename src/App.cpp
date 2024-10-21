@@ -446,6 +446,11 @@ void App::framebuffer_size_callback(GLFWwindow *window, const int width, const i
     glViewport(0, 0, width, height);
 }
 
+void App::glfw_error_callback(int error, const char *desc)
+{
+    spdlog::error("GLFW: {}", desc);
+}
+
 void GLAPIENTRY App::debug_message_callback(
     const GLenum source, const GLenum in_msg_type, const GLuint id, const GLenum in_severity,
     const GLsizei length, const GLchar *message, const void *user_param
@@ -525,9 +530,10 @@ void App::cursor_pos_callback(GLFWwindow *window, double x, double y)
     }
 }
 
-void App::mouse_button_callback(GLFWwindow *window, const int button, const int action, int /*mods*/)
+void App::
+    mouse_button_callback(GLFWwindow *window, const int button, const int action, int /*mods*/)
 {
-   if (button == GLFW_MOUSE_BUTTON_RIGHT)
+    if (button == GLFW_MOUSE_BUTTON_RIGHT)
     {
         if (action == GLFW_PRESS)
         {
