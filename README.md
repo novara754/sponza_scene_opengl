@@ -84,6 +84,10 @@ These commands should work on Linux and Windows.
 Do note that downloading and building the dependencies can take a while. Especially [Assimp]
 sadly takes quite a while to compile because it is a big library.
 
+The resulting binary can be found under `build/Debug/sponza_scene(.exe)`. Make sure to run the 
+program from the project's root directory, because the assets are loaded from `[cwd]/assets`.
+I.e. run `./build/Debug/sponza_scene(.exe)` in the project's root directory.
+
 [CMake]: https://cmake.org/
 [vcpkg]: https://vcpkg.io/en/cmake
 [Ninja]: https://ninja-build.org/
