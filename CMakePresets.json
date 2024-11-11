@@ -11,13 +11,7 @@
       "displayName": "Debug",
       "description": "Configure with vcpkg toolchain and generate Ninja project files for all configurations",
       "binaryDir": "${sourceDir}/cmake-build-debug/${presetName}",
-      "generator": "Ninja Multi-Config",
-      "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": {
-          "type": "FILEPATH",
-          "value": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
-        }
-      }
+      "generator": "Ninja Multi-Config"
     }
   ],
   "buildPresets": [

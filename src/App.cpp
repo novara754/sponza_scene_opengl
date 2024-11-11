@@ -203,7 +203,6 @@ int App::run()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     auto &io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     ImGui_ImplGlfw_InitForOpenGL(m_window, true);
     ImGui_ImplOpenGL3_Init();
@@ -421,10 +420,7 @@ void App::draw_ui(const double delta_time)
         ImGui::SliderFloat("Z Far", &m_sun.m_z_far, 0.0f, 100'000.0f);
 
         ImGui::SeparatorText("Shadow Map");
-        ImGui::Image(
-            reinterpret_cast<void *>(m_shadow_map_depth_attachment.get_handle()),
-            ImVec2(256, 256)
-        );
+        ImGui::Image(m_shadow_map_depth_attachment.get_handle(), ImVec2(256, 256));
     }
     ImGui::End();
 

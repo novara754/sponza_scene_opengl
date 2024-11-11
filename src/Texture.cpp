@@ -1,14 +1,13 @@
 #include "Texture.h"
 
-#include <string>
-
-#include <stb_image.h>
 #include <stdexcept>
+#include <string>
 
 #include <fmt/format.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/vec4.hpp>
 #include <spdlog/spdlog.h>
+#include <stb_image.h>
 
 std::shared_ptr<Texture> Texture::from_file_2d(const std::string &filename, const bool is_srgb)
 {
@@ -70,9 +69,7 @@ std::shared_ptr<Texture> Texture::from_file_2d(const std::string &filename, cons
     return std::make_shared<Texture>(texture, GL_TEXTURE_2D);
 }
 
-std::shared_ptr<Texture> Texture::from_file_cubemap(
-    std::span<const std::string> faces
-)
+std::shared_ptr<Texture> Texture::from_file_cubemap(std::span<const std::string> faces)
 {
     if (faces.size() != 6)
     {
@@ -87,7 +84,17 @@ std::shared_ptr<Texture> Texture::from_file_cubemap(
     {
         int width, height, channels;
         auto *image_data = stbi_load(faces[i].c_str(), &width, &height, &channels, 3);
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_SRGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image_data);
+        glTexImage2D(
+            GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+            0,
+            GL_SRGB,
+            width,
+            height,
+            0,
+            GL_RGB,
+            GL_UNSIGNED_BYTE,
+            image_data
+        );
         stbi_image_free(image_data);
     }
 
@@ -112,7 +119,9 @@ Texture Texture::depth_attachment(const int width, const int height)
     return attachment(width, height, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT);
 }
 
-Texture Texture::attachment(const int width, const int height, const GLint internal_format, const GLenum format)
+Texture Texture::attachment(
+    const int width, const int height, const GLint internal_format, const GLenum format
+)
 {
     GLuint texture;
     glGenTextures(1, &texture);
