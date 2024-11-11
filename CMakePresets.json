@@ -7,20 +7,27 @@
   },
   "configurePresets": [
     {
-      "name": "Debug",
-      "displayName": "Debug",
-      "description": "Configure with vcpkg toolchain and generate Ninja project files for all configurations",
-      "binaryDir": "${sourceDir}/cmake-build-debug/${presetName}",
+      "name": "Ninja",
+      "displayName": "Ninja",
+      "description": "Configure and generate Ninja project files for all configurations",
+      "binaryDir": "${sourceDir}/build/",
       "generator": "Ninja Multi-Config"
     }
   ],
   "buildPresets": [
     {
       "name": "Debug",
-      "configurePreset": "Debug",
+      "configurePreset": "Ninja",
       "displayName": "Build (Debug)",
-      "description": "Build with Ninja/vcpkg (Debug)",
+      "description": "Build with Ninja (Debug)",
       "configuration": "Debug"
+    },
+    {
+      "name": "Release",
+      "configurePreset": "Ninja",
+      "displayName": "Build (Release)",
+      "description": "Build with Ninja (Release)",
+      "configuration": "Release"
     }
   ]
 }

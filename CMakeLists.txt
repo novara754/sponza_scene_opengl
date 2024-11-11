@@ -131,3 +131,7 @@ target_link_libraries(sponza_scene PRIVATE glfw)
 target_link_libraries(sponza_scene PRIVATE glm::glm)
 target_link_libraries(sponza_scene PRIVATE imgui)
 target_link_libraries(sponza_scene PRIVATE assimp::assimp)
+
+install(TARGETS sponza_scene RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}")
+install(DIRECTORY assets DESTINATION "${CMAKE_INSTALL_PREFIX}")
+install(DIRECTORY shaders DESTINATION "${CMAKE_INSTALL_PREFIX}")
