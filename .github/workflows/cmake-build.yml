@@ -23,5 +23,5 @@ jobs:
       - name: Run CMake
         uses: lukka/run-cmake@v10
         with:
-          configurePreset: Debug
+          configurePreset: Ninja
           buildPreset: Debug
