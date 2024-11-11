@@ -62,12 +62,12 @@ as well.
 
 ## Build instructions
 
-This project uses [CMake] as a build tool and [vcpkg] for dependency management.
-Vcpkg is included as a git submodule, as such you should execute `git submodule update --init --recursive`
-in the project directory to ensure everything is ready. CMake will automatically
-invoke vcpkg to download and install the required dependencies. This can take a while
-the first time.
-By default [Ninja] is configured as the build system, so that will need to be install as well.
+> [!TIP]
+> A windows build can be found in the releases section on the GitHub page.
+
+This project uses [CMake] as a build tool. Dependencies are managed through CMake using its
+FetchContent commands.
+By default [Ninja] is configured as the build system, so that will need to be installed as well.
 
 You might need to install additional system dependencies to be able to compile the project.
 On Ubuntu `libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev pkg-config` are required.
@@ -75,21 +75,20 @@ On Ubuntu `libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev pkg-config` 
 To build the project the following commands can be used:
 ```
 $ mkdir build
-$ cmake --preset Debug -B build
 $ cd build
-$ cmake --build .
+$ cmake --preset Ninja -B . ..
+$ cmake --build . --config=Release
 ```
 These commands should work on Linux and Windows.
 
 Do note that downloading and building the dependencies can take a while. Especially [Assimp]
-sadly takes quite a while to compile because it is a big library.
+takes quite a while to compile because it is a big library.
 
-The resulting binary can be found under `build/Debug/sponza_scene(.exe)`. Make sure to run the 
-program from the project's root directory, because the assets are loaded from `[cwd]/assets`.
-I.e. run `./build/Debug/sponza_scene(.exe)` in the project's root directory.
+The resulting binary can be found under `build/Release/sponza_scene(.exe)`. Make sure to run the 
+program from the project's root directory, because the assets are loaded from the `assets` directory.
+I.e. run `./build/Release/sponza_scene(.exe)` in the project's root directory.
 
 [CMake]: https://cmake.org/
-[vcpkg]: https://vcpkg.io/en/cmake
 [Ninja]: https://ninja-build.org/
 
 ## Credits
